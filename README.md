@@ -14,8 +14,10 @@ Male obrazovne igre za djecu u prvom razredu. Igraju se u pregledniku, na mobite
 - **Nastavi niz**: što dolazi sljedeće?
 - **Slogovi**: rastavi riječ na slogove
 - **Uljez**: pronađi ono što ne pripada skupini
-- **Što ide prije?**: poslaži korake redom
 - **Miješanje boja**: koja boja nastaje kad pomiješaš dvije?
+- **Zadnje slovo**: kojim slovom završava riječ sa slike?
+- **Gdje živi?**: živi li životinja u vodi, u šumi ili uz čovjeka?
+- **Lijevo ili desno**: tko je lijevo, a tko desno?
 
 Svaka igra traje zadano vrijeme, a najbolji rezultati spremaju se u rang listu u pregledniku (`localStorage`).
 
