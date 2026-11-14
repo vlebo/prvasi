@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Igre za prvašiće</title>
+<style>
+  :root { --bg:#f6f2ea; --ink:#2f2a3a; --muted:#8a8494; --line:#e7e0d4; --ok:#2bb673; --bad:#ef5350;
+          --gold:#f5b700; --silver:#aeb7c4; --bronze:#d08a4a; --c:#5b6cff; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Nunito", "Varela Round", system-ui, sans-serif; background: var(--bg); color: var(--ink);
+         text-align: center; -webkit-tap-highlight-color: transparent; }
+  main { max-width: 960px; margin: auto; padding: 20px 16px 40px; }
+  h1 { font-size: clamp(2rem, 6vw, 3rem); font-weight: 900; margin: 12px 0 4px; }
+  .sub { color: var(--muted); font-size: 1.3rem; font-weight: 700; margin: 0 0 20px; }
+  .card { background: #fff; border-radius: 28px; padding: 20px; box-shadow: 0 8px 24px rgba(60,40,20,.08); }
+  button { font: inherit; border: none; cursor: pointer; color: inherit; }
+  .shade { --s: color-mix(in srgb, var(--c) 65%, black); }
+  .btn { background: var(--c); color: #fff; font-size: 1.5rem; font-weight: 800; padding: 14px 28px; border-radius: 18px; margin: 6px;
+         box-shadow: 0 6px 0 var(--s); transition: transform .08s, box-shadow .08s; }
+  .btn:active, .game-card:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--s); }
+  .btn.ghost { background: #fff; color: var(--ink); --s: var(--line); }
+  .avatar { display: inline-grid; place-items: center; width: 1.9em; height: 1.9em; border-radius: 50%; background: #fff3d6; flex: none; }
+  .players { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .player { background: #fff; border-radius: 26px; padding: 16px 8px 12px; box-shadow: 0 6px 0 var(--line); font-size: 1.35rem; font-weight: 800;
+            display: flex; flex-direction: column; align-items: center; gap: 10px; transition: transform .15s; min-width: 0; }
+  .player .avatar { font-size: 3.4rem; }
+  .player span:last-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .player.add { background: transparent; border: 4px dashed var(--line); box-shadow: none; color: var(--muted); }
+  .player.add .avatar { background: #fff; font-weight: 900; color: var(--muted); }
+  @media (hover: hover) { .player:hover, .avatars button:hover, .game-card:hover { transform: scale(1.1) rotate(-2deg); } }
+  .chip { display: inline-flex; align-items: center; gap: 10px; background: #fff; padding: 6px 18px 6px 6px; border-radius: 999px;
+          font-size: 1.4rem; font-weight: 800; box-shadow: 0 4px 0 var(--line); }
+  input { font: inherit; font-size: 1.5rem; font-weight: 700; padding: 12px 18px; border-radius: 16px; border: 3px solid var(--line);
+          width: min(100%, 320px); outline: none; }
+  input:focus { border-color: var(--c); }
+  .avatars { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 14px 0; }
+  .avatars { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 14px; justify-items: center; margin: 20px 0; }
+  .avatars button { font-size: 3.4rem; width: 100px; height: 100px; border-radius: 50%; box-shadow: 0 5px 0 var(--line); transition: transform .15s; }
+  .avatars button[aria-pressed="true"] { transform: scale(1.15); outline: 6px solid var(--c); outline-offset: 2px; }
+  .box { min-width: 1.4em; border: 6px solid var(--c); border-radius: 24px; background: #fff; line-height: 1.15; }
+  .boards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 28px; }
+  .board { background: #fff; border-radius: 24px; overflow: hidden; box-shadow: 0 8px 24px rgba(60,40,20,.08); text-align: left; }
+  .board h3 { margin: 0; padding: 10px 16px; background: var(--c); color: #fff; display: flex; align-items: center; gap: 10px; font-size: 1.3rem; }
+  .board h3 svg { width: 34px; height: 34px; }
+  .rows { padding: 8px; }
+  .row { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 14px; font-size: 1.2rem; font-weight: 800; background: #fff; position: relative; }
+  .row.me { background: color-mix(in srgb, var(--c) 18%, white); z-index: 1; }
+  .rank { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--line); font-weight: 900; font-size: 1rem; flex: none; }
+  .row:nth-child(1) .rank { background: var(--gold); color: #fff; }
+  .row:nth-child(2) .rank { background: var(--silver); color: #fff; }
+  .row:nth-child(3) .rank { background: var(--bronze); color: #fff; }
+  .row .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .pts { color: var(--muted); }
+  .empty { color: var(--muted); padding: 12px; font-weight: 700; }
+  .board.big { max-width: 500px; margin: 20px auto; }
+  .board.big .row { font-size: 1.5rem; padding: 8px 14px; }
+  .board.big .rank { width: 40px; height: 40px; font-size: 1.2rem; }
+  .menu { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 18px; margin: 8px 0 24px; }
+  .subject { text-align: left; font-size: 1.4rem; font-weight: 900; color: var(--muted); margin: 24px 4px 8px; text-transform: uppercase; letter-spacing: .05em; }
+  .dot { display: inline-block; width: 1em; height: 1em; border-radius: 50%; border: 4px solid rgba(0,0,0,.12); vertical-align: middle; }
+  .claps { display: flex; justify-content: center; gap: 10px; margin-top: 8px; }
+  .claps i { width: 26px; height: 26px; border-radius: 50%; background: var(--c); }
+  .game-card { background: var(--c); color: #fff; border-radius: 28px; padding: 22px 12px; font-size: 1.5rem; font-weight: 900;
+               box-shadow: 0 8px 0 var(--s); transition: transform .08s, box-shadow .08s; }
+  .game-card svg { width: 90px; height: 90px; display: block; margin: 0 auto 12px; }
+  /* igra */
+  .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .pill { background: #fff; border-radius: 999px; padding: 8px 20px; font-size: 1.6rem; font-weight: 900; box-shadow: 0 4px 0 var(--line);
+          display: inline-flex; align-items: center; gap: 8px; }
+  .timer { height: 16px; background: var(--line); border-radius: 999px; overflow: hidden; margin: 16px 0 8px; }
+  .timer div { height: 100%; width: 100%; background: var(--c); border-radius: 999px; transition: width 1s linear, background .3s; }
+  .timer.low div { background: var(--bad); }
+  .streak { display: flex; justify-content: center; align-items: center; gap: 8px; height: 40px; }
+  .streak i { width: 18px; height: 18px; border-radius: 50%; background: var(--line); transition: background .2s, transform .2s; }
+  .streak i.on { background: var(--gold); transform: scale(1.25); }
+  .x2 { background: var(--gold); color: #fff; font-weight: 900; padding: 2px 12px; border-radius: 999px; font-size: 1.2rem; animation: pulse .6s infinite alternate; }
+  @keyframes pulse { to { transform: scale(1.15); } }
+  .q { margin: 8px auto 24px; min-height: clamp(200px, 34vh, 320px); display: grid; place-items: center; }
+  .eq { font-size: clamp(4rem, 14vw, 7.5rem); font-weight: 900; display: flex; align-items: center; gap: .25em; }
+  .eq .op { color: var(--c); }
+  .slot { min-width: 1.3em; border: 6px dashed var(--line); border-radius: 24px; color: var(--muted); line-height: 1.15; }
+  .eq.small { font-size: clamp(2.4rem, 9vw, 5.5rem); gap: .2em; }
+  .slot.active { border-color: var(--c); animation: blink .7s infinite alternate; }
+  @keyframes blink { to { border-color: var(--line); } }
+  .slot.filled { border-style: solid; border-color: var(--ok); color: var(--ok); }
+  .frame { width: min(100%, 540px); }
+  .pic { width: clamp(170px, 32vw, 230px); height: clamp(170px, 32vw, 230px); border-radius: 50%; margin: auto; display: grid; place-items: center;
+         background: color-mix(in srgb, var(--c) 16%, white); font-size: clamp(5rem, 15vw, 8rem); }
+  .word { font-size: clamp(2rem, 7vw, 3.5rem); font-weight: 900; letter-spacing: .12em; margin-top: 14px; min-height: 1.4em; }
+  .word b { color: var(--c); text-decoration: underline; text-decoration-thickness: 6px; text-underline-offset: 8px; }
+  .answers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .answers button { font-size: clamp(3rem, 11vw, 5.5rem); font-weight: 900; padding: 12px 0; background: #fff; border-radius: 24px;
+                    box-shadow: 0 8px 0 var(--line); transition: transform .08s, background .15s; }
+  .answers.many button { font-size: clamp(2.4rem, 9vw, 4.5rem); }
+  .answers button:disabled { cursor: default; }
+  .level { display: flex; justify-content: center; align-items: center; gap: 12px; min-height: 36px; font-weight: 900; font-size: 1.2rem; }
+  .lvbar { width: 120px; height: 12px; border-radius: 999px; background: var(--line); overflow: hidden; }
+  .lvbar b { display: block; height: 100%; background: var(--c); transition: width .3s; }
+  .levelup { font-size: clamp(3rem, 12vw, 6rem); font-weight: 900; color: #fff; background: var(--c); padding: 10px 40px; border-radius: 32px;
+             left: 50%; top: 40%; box-shadow: 0 10px 0 var(--s); }
+  .answers button:active { transform: translateY(4px); }
+  .answers button.ok { background: var(--ok); color: #fff; box-shadow: 0 8px 0 #1d8a55; }
+  .answers button.bad { background: var(--bad); color: #fff; box-shadow: 0 8px 0 #c62828; }
+  /* kraj */
+  .score-badge { width: 210px; height: 210px; border-radius: 50%; margin: 16px auto; background: var(--c); color: #fff; display: grid;
+                 place-content: center; box-shadow: 0 10px 0 var(--s), inset 0 0 0 12px rgba(255,255,255,.22); }
+  .score-badge b { font-size: 5rem; line-height: 1; }
+  .score-badge span { font-size: 1.3rem; font-weight: 800; opacity: .9; }
+  .tags { min-height: 56px; }
+  .tag { display: inline-flex; align-items: center; gap: 8px; background: var(--gold); color: #fff; font-weight: 900; font-size: 1.4rem;
+         padding: 8px 20px; border-radius: 999px; margin: 4px; }
+  .tag svg { width: 26px; height: 26px; }
+  .fx { position: fixed; pointer-events: none; z-index: 10; }
+  .plus { font-size: 3rem; font-weight: 900; color: var(--gold); -webkit-text-stroke: 2px #fff; }
+  .btn.small { font-size: 1.1rem; padding: 8px 16px; margin: 0; }
+  .seg { display: inline-flex; flex-wrap: wrap; justify-content: center; max-width: 100%; background: #fff; border-radius: 28px; padding: 4px; box-shadow: 0 4px 0 var(--line); margin-bottom: 20px; align-items: center; }
+  .seg span { color: var(--muted); font-weight: 800; padding: 0 12px; }
+  .seg button { font-weight: 900; font-size: 1.2rem; padding: 8px 18px; border-radius: 999px; }
+  .seg button[aria-pressed="true"] { background: var(--c); color: #fff; }
+  .example { zoom: .5; max-width: 900px; margin: 0 auto 8px; pointer-events: none; }
+  .rules { list-style: none; padding: 0; margin: 16px auto; max-width: 560px; text-align: left; font-size: 1.3rem; font-weight: 700; }
+  .rules li { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
+  .rules li b { flex: none; width: 44px; height: 44px; border-radius: 50%; background: var(--c); color: #fff; display: grid; place-items: center; }
+  .del { background: rgba(255,255,255,.2); border-radius: 50%; width: 38px; height: 38px; display: grid; place-items: center; flex: none; }
+  .del:hover { background: rgba(255,255,255,.4); }
+  .reset { margin-top: 32px; background: none; color: var(--muted); text-decoration: underline; font-size: 1rem; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body class="shade">
+<main>
+  <!-- 1. Odabir igrača -->
+  <section id="pickScreen">
+    <h1>Igre za prvašiće</h1>
+    <p class="sub" style="margin:0 0 8px">Trajanje igre</p>
+    <div class="seg" id="durations"></div>
+    <p class="sub">Tko igra?</p>
+    <div class="players" id="players"></div>
+    <div class="card" id="newPlayer">
+      <p class="sub" style="margin:0 0 12px">Novi igrač</p>
+      <input id="name" placeholder="Upiši ime" maxlength="15" aria-label="Ime">
+      <div class="avatars" id="avatars"></div>
+      <button class="btn" id="startNew">Dalje</button>
+    </div>
+    <div id="boards"></div>
+    <button class="reset" id="reset">Obriši rang liste</button>
+  </section>
+
+  <!-- 2. Izbor igre -->
+  <section id="menuScreen" hidden>
+    <h1 id="hello"></h1>
+    <p class="sub">Odaberi igru</p>
+    <div id="menu"></div>
+    <button class="btn ghost" onclick="goHome()">Početna</button>
+  </section>
+
+  <!-- 2b. Upute -->
+  <section id="introScreen" hidden>
+    <h1 id="introTitle"></h1>
+    <p class="sub" id="introHow" style="font-size:1.6rem;color:var(--ink);max-width:640px;margin:0 auto 16px"></p>
+    <div class="card example"><div class="q" id="exQ"></div><div class="answers" id="exA"></div></div>
+    <ul class="rules" id="introRules"></ul>
+    <button class="btn" style="font-size:2rem;padding:18px 56px" onclick="play()">Kreni!</button>
+    <br><button class="btn ghost small" style="margin-top:12px" onclick="goHome()">Početna</button>
+  </section>
+
+  <!-- 3. Igra -->
+  <section id="gameScreen" hidden>
+    <div class="top"><span id="who"></span><button class="btn ghost small" onclick="goHome()">Početna</button><span class="pill" id="scorePill"></span></div>
+    <div class="timer" id="timer"><div></div></div>
+    <div class="level" id="level"></div>
+    <div class="streak" id="streak"></div>
+    <div class="q" id="question" aria-live="polite"></div>
+    <div class="answers" id="answers"></div>
+  </section>
+
+  <!-- 4. Kraj -->
+  <section id="endScreen" hidden>
+    <h1 id="bravo"></h1>
+    <div class="score-badge"><b id="result">0</b><span>bodova</span></div>
+    <div class="tags" id="tags"></div>
+    <div class="board big" id="board"></div>
+    <button class="btn" onclick="startGame()">Ponovo</button>
+    <button class="btn" style="--c:#9b5de5" onclick="menuScreen()">Druga igra</button>
+    <button class="btn ghost" onclick="goHome()">Početna</button>
+  </section>
+</main>
+
+<script>
+const DURATIONS = [10, 30, 60, 120, 180];
+const durLabel = d => d < 60 ? `${d} s` : `${d / 60} min`;
+const MAX = 10; // brojevi do 10; povećaj na 20 kad dođe gradivo (Brojalica je uvijek do 10)
+let seconds = +localStorage.getItem('trajanje') || 60;
+const AVATARS = ['🦊','🐸','🦄','🐼','🐯','🐵','🐰','🐻','🐱','🐶','🐧','🐞','🐨','🦁','🐷','🐙'];
+const avBg = a => AVATARS.includes(a) ? `hsl(${AVATARS.indexOf(a) * 360 / AVATARS.length} 85% 88%)` : '#fff';
+const STAR = '<svg viewBox="0 0 24 24" width="30" height="30"><path fill="#f5b700" d="M12 2l3 6.5 7 .8-5.2 4.8 1.4 7L12 17.6 5.8 21.1l1.4-7L2 9.3l7-.8z"/></svg>';
+const ARROW = '<svg viewBox="0 0 24 24"><path fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" d="M12 20V5M5 11l7-7 7 7"/></svg>';
+const CROWN = '<svg viewBox="0 0 24 24"><path fill="#fff" d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z"/></svg>';
+const $ = id => document.getElementById(id);
+const rnd = n => Math.floor(Math.random() * n);
+const shuffle = a => a.sort(() => Math.random() - 0.5);
+
+// 3 ponuđena broja 0–10, uključujući točan
+function numberOptions(answer, min = 0) {
+  const opts = new Set([answer]);
+  while (opts.size < 3) {
+    const o = answer + rnd(7) - 3;
+    if (o >= min && o <= MAX) opts.add(o);
+  }
+  return shuffle([...opts]);
+}
+
+// Okvir od 10 polja s n nasumično raspoređenih točkica
+function frame(n) {
+  const filled = shuffle([...Array(10).keys()]).slice(0, n);
+  let s = '<svg class="frame" viewBox="0 0 530 220">';
+  for (let i = 0; i < 10; i++) {
+    const x = 10 + (i % 5) * 104, y = 10 + Math.floor(i / 5) * 104;
+    s += `<rect x="${x}" y="${y}" width="96" height="96" rx="20" fill="#fff" stroke="#e7e0d4" stroke-width="4"/>`;
+    if (filled.includes(i)) s += `<circle cx="${x + 48}" cy="${y + 48}" r="34" style="fill:var(--c)"/>`;
+  }
+  return s + '</svg>';
+}
+
+const eq = (a, op, b, r) => `<div class="eq"><span>${a}</span><span class="op">${op}</span><span>${b}</span><span class="op">=</span>` +
+  `<span class="slot${r === '?' ? '' : ' filled'}">${r}</span></div>`;
+
+const dot = c => `<span class="dot" style="background:${c}"></span>`;
+// opcija je boja (#hex) ili tekst/broj/emoji
+const optHtml = o => typeof o === 'string' && o[0] === '#' ? dot(o) : String(o);
+const sign = (a, b) => a < b ? '<' : a > b ? '>' : '=';
+// prazna/aktivna/popunjena kućica za i-ti znak, kad je k znakova već upisano
+const slot = (v, i, k) => `<span class="slot${i < k ? ' filled' : i === k ? ' active' : ''}">${i < k ? v : i === k ? '?' : '&nbsp;'}</span>`;
+
+// Riječi bez dvojbe što slika predstavlja
+const WORDS = [['🐱','MAČKA'],['🐶','PAS'],['🍎','JABUKA'],['🐟','RIBA'],['🌞','SUNCE'],['🏠','KUĆA'],
+  ['🐻','MEDVJED'],['🚗','AUTO'],['🍌','BANANA'],['🐸','ŽABA'],['🐰','ZEC'],['🦊','LISICA'],['🎈','BALON'],
+  ['🐘','SLON'],['🦁','LAV'],['🍓','JAGODA'],['🐝','PČELA'],['⭐','ZVIJEZDA'],['🌙','MJESEC'],['🐄','KRAVA'],
+  ['🐭','MIŠ'],['🐢','KORNJAČA'],['🍐','KRUŠKA'],['🥕','MRKVA'],['⚽','LOPTA'],['🦆','PATKA'],['🐑','OVCA'],
+  ['🐍','ZMIJA'],['🍋','LIMUN'],['🌹','RUŽA'],['🐴','KONJ'],['🍕','PIZZA'],['🎁','POKLON'],['🧀','SIR'],['🐷','SVINJA']];
+const LETTERS = [...new Set(WORDS.map(w => w[1][0]))];
+
+// Slogovi: [slika, riječ, broj slogova]; izbjegnute riječi s dvojbom (auto, mrkva, riječi s "ije")
+const SYLLABLES = [['🐶','PAS',1],['🐭','MIŠ',1],['🐰','ZEC',1],['🧀','SIR',1],['🦁','LAV',1],['🐳','KIT',1],['👃','NOS',1],
+  ['🌲','BOR',1],['🔑','KLJUČ',1],['🐘','SLON',1],['🐴','KONJ',1],['🚂','VLAK',1],
+  ['🐱','MAČKA',2],['🐟','RIBA',2],['🏠','KUĆA',2],['🐸','ŽABA',2],['⚽','LOPTA',2],['🍐','KRUŠKA',2],['🐝','PČELA',2],['🐄','KRAVA',2],
+  ['🐑','OVCA',2],['🐍','ZMIJA',2],['🍋','LIMUN',2],['🌹','RUŽA',2],['🌞','SUNCE',2],['📚','KNJIGA',2],['🐔','KOKOŠ',2],['🎂','TORTA',2],
+  ['🦋','LEPTIR',2],['🦆','PATKA',2],
+  ['🍎','JABUKA',3],['🍌','BANANA',3],['🍓','JAGODA',3],['🦊','LISICA',3],['🐢','KORNJAČA',3],['🦒','ŽIRAFA',3],['👞','CIPELA',3],
+  ['☂️','KIŠOBRAN',3],['🐊','KROKODIL',3],['🦜','PAPIGA',3],['📱','MOBITEL',3],
+  ['🍫','ČOKOLADA',4],['💻','RAČUNALO',4],['🍉','LUBENICA',4],['🚁','HELIKOPTER',4]];
+
+// Uljez: skupine i s kojima se smiju miješati (bez dvojbenih parova)
+const GROUPS = {
+  voce: { name: 'voće', items: ['🍎','🍌','🍐','🍇','🍓','🍒','🍑','🍋','🍉','🍊'], vs: ['povrce', 'prijevoz', 'divlje'] },
+  povrce: { name: 'povrće', items: ['🥕','🥦','🌽','🥒','🥔','🧅','🧄'], vs: ['voce', 'prijevoz'] },
+  domace: { name: 'domaća životinja', items: ['🐄','🐖','🐑','🐓','🐐','🐴'], vs: ['divlje', 'prijevoz'] },
+  divlje: { name: 'divlja životinja', items: ['🦁','🐯','🐻','🦊','🐺','🐘','🦒','🦓'], vs: ['domace', 'voda'] },
+  voda: { name: 'životinja iz vode', items: ['🐟','🐬','🐳','🐙','🦀','🐠'], vs: ['divlje', 'prijevoz'] },
+  prijevoz: { name: 'prijevozno sredstvo', items: ['🚗','🚌','🚲','🚂','✈️','🚢','🚜'], vs: ['voce', 'divlje'] },
+};
+
+const SEQUENCES = [[['🌅','☀️','🌇','🌙'], 'jutro → podne → večer → noć'], [['🌸','☀️','🍂','⛄'], 'proljeće → ljeto → jesen → zima'],
+  [['🌰','🌱','🌳'], 'sjemenka → klica → stablo'], [['🥚','🐣','🐥','🐔'], 'jaje → pile → kokoš'],
+  [['👶','🧒','🧑','🧓'], 'beba → dijete → odrasla osoba → starija osoba']];
+
+const COLORS = { crvena: '#e53935', žuta: '#fdd835', plava: '#1e88e5', bijela: '#ffffff', crna: '#222222',
+                 narančasta: '#fb8c00', zelena: '#43a047', ljubičasta: '#8e24aa', ružičasta: '#f48fb1', siva: '#9e9e9e' };
+const MIXES = [['crvena','žuta','narančasta'], ['plava','žuta','zelena'], ['crvena','plava','ljubičasta'],
+               ['crvena','bijela','ružičasta'], ['crna','bijela','siva']];
+
+const GAMES = {
+  racunko: { title: 'Računko', color: '#5b6cff', how: 'Izračunaj zadatak i dodirni točan broj.',
+    icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/><path d="M18 38h28M32 24v28M54 66h28" stroke="#fff" stroke-width="9" stroke-linecap="round"/></svg>',
+    // do 10, bez negativnih rezultata
+    make() {
+      const plus = Math.random() < 0.5;
+      const a = rnd(MAX + 1);
+      const b = plus ? rnd(MAX + 1 - a) : rnd(a + 1);
+      const answer = plus ? a + b : a - b, op = plus ? '+' : '−';
+      return { view: eq(a, op, b, '?'), reveal: eq(a, op, b, answer), answer, options: numberOptions(answer) };
+    } },
+  brojalica: { title: 'Brojalica', color: '#1fa774', how: 'Prebroji točkice i dodirni koliko ih ima.',
+    icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/>' +
+      [[30,38],[50,38],[70,38],[30,62],[50,62]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="8" fill="#fff"/>`).join('') + '</svg>',
+    make() {
+      const answer = 1 + rnd(10);
+      return { view: frame(answer), answer, options: numberOptions(answer, 1) };
+    } },
+  slovo: { title: 'Prvo slovo', color: '#f07b2e', how: 'Pogledaj sliku. Kojim slovom počinje ta riječ? Dodirni slovo.',
+    icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/><text x="50" y="67" font-size="48" font-weight="900" text-anchor="middle" fill="#fff" font-family="system-ui">Aa</text></svg>',
+    make() {
+      const [pic, word] = WORDS[rnd(WORDS.length)];
+      const opts = new Set([word[0]]);
+      while (opts.size < 3) opts.add(LETTERS[rnd(LETTERS.length)]);
+      return { view: `<div><div class="pic">${pic}</div><div class="word"></div></div>`,
+               reveal: `<div><div class="pic">${pic}</div><div class="word"><b>${word[0]}</b>${word.slice(1)}</div></div>`,
+               answer: word[0], options: shuffle([...opts]) };
+    } },
+  usporedi: { title: 'Veće ili manje', color: '#d94f8a', maxLevel: 4,
+    how: 'Usporedi brojeve i dodirni znak koji ide u praznu kućicu: < manje, > veće, = jednako.',
+    icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/><path d="M40 30L22 50l18 20M60 30l18 20-18 20" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    // 1: dva broja · 2: tri broja · 3: zbroj i broj · 4: zbroj i zbroj
+    make(level) {
+      const near = x => Math.random() < 0.2 ? x : rnd(MAX + 1); // "=" ne smije biti prerijedak
+      const sum = (total = rnd(MAX + 1)) => { const x = rnd(total + 1); return [total, `${x}+${total - x}`]; };
+      let items;
+      if (level === 1) { const a = rnd(MAX + 1); items = [[a], [near(a)]]; }
+      else if (level === 2) { const a = rnd(MAX + 1), b = near(a); items = [[a], [b], [near(b)]]; }
+      else { const s1 = sum(); items = [s1, level === 3 ? [near(s1[0])] : sum(near(s1[0]))]; }
+      const steps = items.slice(1).map(([v], i) => sign(items[i][0], v));
+      const show = k => `<div class="eq${level > 1 ? ' small' : ''}">` + items.map(([v, label = v], i) =>
+        (i ? slot(steps[i - 1], i - 1, k) : '') + `<span class="box">${label}</span>`).join('') + '</div>';
+      return { show, steps, options: ['<', '=', '>'] }; // uvijek isti redoslijed znakova
+    } },
+  poredaj: { title: 'Poredaj brojeve', color: '#0e9fb3', maxLevel: 4, sticky: true,
+    how: 'Dodiruj brojeve redom, od najmanjeg do najvećeg. Kućice rastu kao brojevi. Na razini 4 ide obrnuto!',
+    icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/><rect x="24" y="56" width="14" height="18" rx="4" fill="#fff"/><rect x="43" y="44" width="14" height="30" rx="4" fill="#fff"/><rect x="62" y="30" width="14" height="44" rx="4" fill="#fff"/></svg>',
+    // 1: 3 broja · 2: 4 broja · 3: 5 brojeva · 4: 4 broja od najvećeg
+    make(level) {
+      const [count, down] = [[3, false], [4, false], [5, false], [4, true]][level - 1];
+      const nums = new Set();
+      while (nums.size < count) nums.add(rnd(MAX + 1));
+      const steps = [...nums].sort((a, b) => down ? b - a : a - b);
+      // kućice rastu (ili padaju) da se bez čitanja vidi smjer
+      const show = k => '<div class="eq small">' + steps.map((n, i) =>
+        `<span class="slot${i < k ? ' filled' : i === k ? ' active' : ''}" style="font-size:${(down ? count - 1 - i : i) * .15 + .8}em">${i < k ? n : '&nbsp;'}</span>`).join('') + '</div>';
+      return { show, steps, options: shuffle([...nums]) };
+    } },
+  niz: { title: 'Nastavi niz', color: '#8a5cf6', maxLevel: 4,
+    how: 'Pogledaj kako se sličice ponavljaju. Koja dolazi sljedeća? Dodirni je.',
+    icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/><circle cx="22" cy="50" r="9" fill="#fff"/><rect x="36" y="41" width="18" height="18" rx="3" fill="#fff"/><circle cx="68" cy="50" r="9" fill="#fff"/><text x="86" y="60" font-size="28" font-weight="900" fill="#fff" text-anchor="middle" font-family="system-ui">?</text></svg>',
+    // 1: AB · 2: AAB / ABB · 3: ABC · 4: AABC / ABCC
+    make(level) {
+      const sets = [['#e53935', '#1e88e5', '#fdd835', '#43a047'], ['🍎', '🍌', '🍇', '🍐'], ['⭐', '🌙', '❤️', '☀️'], ['🐱', '🐶', '🐭', '🐰']];
+      const [a, b, c, d] = shuffle([...sets[rnd(sets.length)]]);
+      const pattern = shuffle([[[a, b]], [[a, a, b], [a, b, b]], [[a, b, c]], [[a, a, b, c], [a, b, c, c]]][level - 1])[0];
+      const len = pattern.length * 2 + rnd(pattern.length) + (pattern.length < 3 ? 1 : 0);
+      const seq = Array.from({ length: len + 1 }, (_, i) => pattern[i % pattern.length]);
+      const answer = seq[len];
+      const opts = new Set([answer, ...shuffle([...new Set(pattern)])]);
+      if (opts.size < 3) opts.add(d);
+      const show = k => '<div class="eq small" style="flex-wrap:wrap;justify-content:center">' +
+        seq.slice(0, len).map(x => `<span>${optHtml(x)}</span>`).join('') + slot(optHtml(answer), 0, k) + '</div>';
+      return { show, steps: [answer], options: shuffle([...opts].slice(0, 3)) };
+    } },
+  slogovi: { title: 'Slogovi', color: '#d4a017',
+    how: 'Izgovori riječ sa slike i pljesni za svaki slog. Koliko puta si pljesnuo/la?',
+    icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/><rect x="16" y="40" width="20" height="20" rx="6" fill="#fff"/><rect x="40" y="40" width="20" height="20" rx="6" fill="#fff"/><rect x="64" y="40" width="20" height="20" rx="6" fill="#fff"/></svg>',
+    make() {
+      const [pic, word, n] = SYLLABLES[rnd(SYLLABLES.length)];
+      return { view: `<div><div class="pic">${pic}</div><div class="word"></div></div>`,
+               reveal: `<div><div class="pic">${pic}</div><div class="word">${word}</div><div class="claps">${'<i></i>'.repeat(n)}</div></div>`,
+               answer: n, options: [1, 2, 3, 4] };
+    } },
+  uljez: { title: 'Uljez', color: '#6a994e',
+    how: 'Tri sličice idu zajedno, a jedna ne pripada. Pronađi uljeza!',
+    icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/><circle cx="34" cy="36" r="11" fill="#fff"/><circle cx="66" cy="36" r="11" fill="#fff"/><circle cx="34" cy="68" r="11" fill="#fff"/><rect x="55" y="57" width="22" height="22" rx="3" fill="none" stroke="#fff" stroke-width="5"/></svg>',
+    make() {
+      const ids = Object.keys(GROUPS), g = ids[rnd(ids.length)];
+      const other = GROUPS[g].vs[rnd(GROUPS[g].vs.length)];
+      const odd = GROUPS[other].items[rnd(GROUPS[other].items.length)];
+      const three = shuffle([...GROUPS[g].items]).slice(0, 3);
+      const hint = '<svg viewBox="0 0 260 70" style="width:min(80%,360px)">' + [0, 1, 2].map(i => `<circle cx="${35 + i * 64}" cy="35" r="26" style="fill:var(--c)"/>`).join('') +
+        '<rect x="200" y="9" width="52" height="52" rx="10" fill="none" stroke="#2f2a3a" stroke-width="6" stroke-dasharray="10 6"/></svg>';
+      return { view: hint, reveal: `<div class="word" style="letter-spacing:0">${odd} nije ${GROUPS[g].name}</div>`,
+               answer: odd, options: shuffle([...three, odd]) };
+    } },
+  redoslijed: { title: 'Što ide prije?', color: '#2a9d8f', sticky: true,
+    how: 'Dodiruj sličice redom: što je prvo, što poslije, a što na kraju.',
+    icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/><circle cx="22" cy="50" r="10" fill="#fff"/><circle cx="50" cy="50" r="10" fill="#fff"/><circle cx="78" cy="50" r="10" fill="#fff"/><path d="M33 50h6M61 50h6" stroke="#fff" stroke-width="5" stroke-linecap="round"/></svg>',
+    make() {
+      const [steps, name] = SEQUENCES[rnd(SEQUENCES.length)];
+      const show = k => '<div><div class="eq small">' + steps.map((x, i) => (i ? '<span class="op" style="font-size:.6em">→</span>' : '') +
+        `<span class="slot${i < k ? ' filled' : i === k ? ' active' : ''}">${i < k ? x : '&nbsp;'}</span>`).join('') + '</div>' +
+        `<div class="word" style="font-size:1.6rem;letter-spacing:0">${k === steps.length ? name : ''}</div></div>`;
+      return { show, steps, options: shuffle([...steps]) };
+    } },
+  boje: { title: 'Miješanje boja', color: '#e76f51',
+    how: 'Koja boja nastane kad pomiješaš ove dvije? Dodirni je.',
+    icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/><circle cx="40" cy="42" r="18" fill="#fff" opacity=".9"/><circle cx="60" cy="42" r="18" fill="#fff" opacity=".6"/><circle cx="50" cy="60" r="18" fill="#fff" opacity=".75"/></svg>',
+    make() {
+      const [x, y, r] = MIXES[rnd(MIXES.length)];
+      const [a, b] = shuffle([x, y]);
+      const opts = new Set([r]);
+      while (opts.size < 3) opts.add(MIXES[rnd(MIXES.length)][2]);
+      const view = k => `<div><div class="eq">${dot(COLORS[a])}<span class="op">+</span>${dot(COLORS[b])}<span class="op">=</span>${slot(dot(COLORS[r]), 0, k)}</div>` +
+        `<div class="word" style="font-size:1.6rem;letter-spacing:0">${k ? `${a} + ${b} = ${r}` : ''}</div></div>`;
+      return { view: view(0), reveal: view(1), answer: COLORS[r], options: shuffle([...opts].map(c => COLORS[c])) };
+    } },
+};
+
+// Predmeti, redom kako se prikazuju
+const SUBJECTS = { 'Matematika': ['racunko', 'brojalica', 'usporedi', 'poredaj', 'niz'], 'Hrvatski jezik': ['slovo', 'slogovi'],
+                   'Priroda i društvo': ['uljez', 'redoslijed'], 'Likovna kultura': ['boje'] };
+console.assert(Object.values(SUBJECTS).flat().sort().join() === Object.keys(GAMES).sort().join(), 'svaka igra u točno jednom predmetu');
+
+// self-check generatora
+for (const g of Object.values(GAMES)) for (let lv = 1; lv <= (g.maxLevel || 1); lv++) for (let i = 0; i < 300; i++) {
+  const t = g.make(lv), steps = t.steps || [t.answer];
+  console.assert(t.options.length >= 3 && new Set(t.options).size === t.options.length && steps.every(x => t.options.includes(x)), g.title, lv, t);
+}
+
+// Rang lista po igri: najbolji rezultat po igraču, { "Ana": {avatar, score} }
+// Svako trajanje ima svoju listu (60 s zadržava stari ključ)
+const key = (id, secs = seconds) => secs === 60 ? id + '-rang' : `${id}-${secs}-rang`;
+const load = (id, secs) => JSON.parse(localStorage.getItem(key(id, secs)) || '{}');
+const save = (id, b) => localStorage.setItem(key(id), JSON.stringify(b));
+const ranked = b => Object.entries(b).sort((x, y) => y[1].score - x[1].score);
+
+let player = null, avatar = AVATARS[0], game = null, score = 0, streak = 0, solved = 0, step = 0, current = null, timer = null, locked = false;
+const PER_LEVEL = 5; // točnih zadataka do sljedeće razine
+const levelOf = () => Math.min(GAMES[game].maxLevel || 1, 1 + Math.floor(solved / PER_LEVEL));
+const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function setColor(c) { document.body.style.setProperty('--c', c); }
+
+// Avatar + ime; ime uvijek kao tekst (unos korisnika)
+function chip(av, name, tag = 'span') {
+  const el = document.createElement(tag);
+  el.className = 'chip';
+  el.innerHTML = '<span class="avatar"></span><span></span>';
+  el.children[0].textContent = av;
+  el.children[0].style.background = avBg(av);
+  el.children[1].textContent = name;
+  return el;
+}
+
+// Papirnati konfeti
+function confetti(n) {
+  if (calm) return;
+  const colors = ['#5b6cff', '#1fa774', '#f07b2e', '#f5b700', '#ef5350', '#9b5de5'];
+  for (let i = 0; i < n; i++) {
+    const c = document.createElement('div');
+    c.className = 'fx';
+    c.style.cssText += `left:${rnd(100)}vw;top:-20px;width:${8 + rnd(8)}px;height:${12 + rnd(10)}px;border-radius:3px;background:${colors[rnd(6)]}`;
+    document.body.append(c);
+    c.animate([{ transform: 'translateY(0) rotate(0)' }, { transform: `translateY(110vh) translateX(${rnd(200) - 100}px) rotate(${rnd(1080)}deg)` }],
+      { duration: 2200 + rnd(1800), delay: rnd(700), easing: 'cubic-bezier(.3,.6,.6,1)', fill: 'backwards' }).onfinish = () => c.remove();
+  }
+}
+
+// "+10" koji odleti s gumba
+function floatText(text, el) {
+  if (calm) return;
+  const r = el.getBoundingClientRect(), f = document.createElement('span');
+  f.className = 'fx plus';
+  f.textContent = text;
+  f.style.cssText += `left:${r.left + r.width / 2 - 40}px;top:${r.top - 20}px`;
+  document.body.append(f);
+  f.animate([{ transform: 'translateY(0) scale(.6)', opacity: 1 }, { transform: 'translateY(-60px) scale(1.2)', opacity: 1, offset: .4 },
+             { transform: 'translateY(-150px) scale(1)', opacity: 0 }], { duration: 900 }).onfinish = () => f.remove();
+}
+
+function countUp(el, to) {
+  const t0 = performance.now();
+  const step = t => {
+    const p = calm ? 1 : Math.min((t - t0) / 1200, 1);
+    el.textContent = Math.round(to * (1 - (1 - p) ** 3));
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+function tag(icon, text) {
+  const t = document.createElement('span');
+  t.className = 'tag';
+  t.innerHTML = icon;
+  t.append(text);
+  $('tags').append(t);
+  if (!calm) t.animate([{ transform: 'scale(0)' }, { transform: 'scale(1.2)' }, { transform: 'scale(1)' }], { duration: 400 });
+}
+
+// Penjanje: moj red klizi odozdo na novo mjesto, ostali se pomaknu dolje
+function climb(oldIdx, newIdx) {
+  const rows = [...$('board').querySelectorAll('.row')];
+  if (newIdx >= rows.length || (oldIdx !== -1 && oldIdx <= newIdx)) return;
+  const from = oldIdx === -1 ? rows.length : Math.min(oldIdx, rows.length);
+  const steps = from - newIdx;
+  setTimeout(() => {
+    if (newIdx === 0) tag(CROWN, 'Prvo mjesto!');
+    else tag(ARROW, oldIdx === -1 ? `${newIdx + 1}. mjesto` : `${steps} ${steps === 1 ? 'mjesto' : 'mjesta'} gore`);
+    if (newIdx < 3) confetti(70);
+  }, calm ? 0 : 900 + 300 * steps);
+  if (calm) return;
+  const h = rows[newIdx].offsetHeight;
+  const opts = { duration: 300 * steps + 500, delay: 900, easing: 'ease-in-out', fill: 'backwards' };
+  rows[newIdx].animate([{ transform: `translateY(${steps * h}px) scale(1.06)`, boxShadow: '0 8px 20px rgba(0,0,0,.15)' },
+    { transform: 'scale(1.06)', boxShadow: '0 8px 20px rgba(0,0,0,.15)', offset: .85 }, { transform: 'none', boxShadow: 'none' }], opts);
+  for (let i = newIdx + 1; i <= Math.min(from, rows.length - 1); i++)
+    rows[i].animate([{ transform: `translateY(${-h}px)` }, { transform: 'none' }], opts);
+}
+
+let audio;
+function beep(ok) {
+  audio = audio || new AudioContext();
+  const o = audio.createOscillator(), g = audio.createGain();
+  o.frequency.value = ok ? 880 : 220;
+  g.gain.setValueAtTime(0.2, audio.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.3);
+  o.connect(g).connect(audio.destination);
+  o.start(); o.stop(audio.currentTime + 0.3);
+}
+
+function renderBoard(el, id) {
+  const g = GAMES[id];
+  el.style.setProperty('--c', g.color);
+  el.innerHTML = `<h3>${g.icon}${g.title}<small style="margin-left:auto;opacity:.8">${durLabel(seconds)}</small></h3><div class="rows"></div>`;
+  const list = el.lastChild, rows = ranked(load(id)).slice(0, 10);
+  if (!rows.length) list.innerHTML = '<div class="empty">Još nitko nije igrao</div>';
+  rows.forEach(([name, r], i) => {
+    const row = document.createElement('div');
+    row.className = 'row' + (name === player ? ' me' : '');
+    row.innerHTML = '<span class="rank"></span><span class="avatar"></span><span class="name"></span><span class="pts"></span>';
+    [i + 1, r.avatar, name, r.score].forEach((t, k) => row.children[k].textContent = t);
+    row.children[1].style.background = avBg(r.avatar);
+    list.append(row);
+  });
+}
+
+function show(id) {
+  ['pickScreen','menuScreen','introScreen','gameScreen','endScreen'].forEach(s => $(s).hidden = s !== id);
+  scrollTo(0, 0);
+}
+
+function pickScreen() {
+  player = null;
+  setColor('#5b6cff');
+  const all = Object.assign({}, ...Object.keys(GAMES).flatMap(id => DURATIONS.map(d => load(id, d)))); // svi igrači iz svih igara
+  $('players').innerHTML = '';
+  const names = Object.entries(all).sort();
+  names.forEach(([name, r]) => {
+    const b = chip(r.avatar, name, 'button');
+    b.className = 'player';
+    b.onclick = () => { player = name; avatar = r.avatar; menuScreen(); };
+    $('players').append(b);
+  });
+  const add = chip('+', 'Novi igrač', 'button');
+  add.className = 'player add';
+  add.onclick = () => { $('newPlayer').hidden = false; $('newPlayer').scrollIntoView({ behavior: 'smooth' }); $('name').focus(); };
+  $('players').append(add);
+  $('newPlayer').hidden = names.length > 0; // forma odmah otvorena samo kad još nema igrača
+  $('name').value = '';
+  $('durations').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.secs === seconds));
+  $('boards').innerHTML = '';
+  bySubject($('boards'), 'boards', id => {
+    const d = document.createElement('div');
+    d.className = 'board';
+    renderBoard(d, id);
+    const del = document.createElement('button');
+    del.className = 'del';
+    del.title = del.ariaLabel = 'Obriši ovu rang listu';
+    del.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22"><path fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>';
+    del.onclick = () => {
+      if (!confirm(`Obrisati rang listu: ${GAMES[id].title} (${durLabel(seconds)})?`)) return;
+      localStorage.removeItem(key(id));
+      pickScreen();
+    };
+    d.firstChild.append(del);
+    return d;
+  });
+  show('pickScreen');
+}
+
+// Naslov predmeta + mreža elemenata koje vraća make(id)
+function bySubject(container, cls, make) {
+  container.innerHTML = '';
+  Object.entries(SUBJECTS).forEach(([name, ids]) => {
+    const h = document.createElement('h2'), grid = document.createElement('div');
+    h.className = 'subject';
+    h.textContent = name;
+    grid.className = cls;
+    grid.append(...ids.map(make));
+    container.append(h, grid);
+  });
+}
+
+function menuScreen() {
+  setColor('#5b6cff');
+  $('hello').textContent = `Bok, ${player}!`;
+  bySubject($('menu'), 'menu', id => {
+    const g = GAMES[id];
+    const b = document.createElement('button');
+    b.className = 'game-card shade';
+    b.style.setProperty('--c', g.color);
+    b.innerHTML = g.icon + g.title;
+    b.onclick = () => { game = id; startGame(); };
+    return b;
+  });
+  show('menuScreen');
+}
+
+AVATARS.forEach(a => {
+  const b = document.createElement('button');
+  b.textContent = a;
+  b.style.background = avBg(a);
+  b.setAttribute('aria-pressed', a === avatar);
+  b.onclick = () => {
+    avatar = a;
+    document.querySelectorAll('.avatars button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  };
+  $('avatars').append(b);
+});
+
+$('startNew').onclick = () => {
+  const name = $('name').value.trim();
+  if (!name) { $('name').focus(); return; }
+  player = name;
+  menuScreen();
+};
+
+DURATIONS.forEach(d => {
+  const b = document.createElement('button');
+  b.textContent = durLabel(d);
+  b.dataset.secs = d;
+  b.onclick = () => { seconds = d; localStorage.setItem('trajanje', d); pickScreen(); };
+  $('durations').append(b);
+});
+
+function goHome() {
+  clearInterval(timer); timer = null; // prekinuta igra se ne sprema
+  pickScreen();
+}
+
+$('reset').onclick = () => {
+  if (!confirm('Obrisati SVE rang liste i igrače?')) return;
+  Object.keys(GAMES).forEach(id => DURATIONS.forEach(d => localStorage.removeItem(key(id, d))));
+  pickScreen();
+};
+
+function renderStatus() {
+  $('scorePill').innerHTML = STAR + score;
+  $('streak').innerHTML = [0, 1, 2].map(i => `<i class="${i < streak ? 'on' : ''}"></i>`).join('') +
+    (streak >= 3 ? '<span class="x2">x2</span>' : '');
+  const max = GAMES[game].maxLevel, lv = levelOf();
+  $('level').innerHTML = max ? `Razina ${lv}<span class="lvbar"><b style="width:${lv === max ? 100 : solved % PER_LEVEL / PER_LEVEL * 100}%"></b></span>` : '';
+}
+
+function levelUp(lv) {
+  confetti(30);
+  if (calm) return;
+  const f = document.createElement('div');
+  f.className = 'fx levelup shade';
+  f.textContent = `Razina ${lv}!`;
+  document.body.append(f);
+  f.animate([{ transform: 'translate(-50%,-50%) scale(0)' }, { transform: 'translate(-50%,-50%) scale(1.1)', offset: .25 },
+             { transform: 'translate(-50%,-50%) scale(1)', opacity: 1, offset: .8 }, { transform: 'translate(-50%,-50%) scale(1)', opacity: 0 }],
+            { duration: 1400, fill: 'forwards' }).onfinish = () => f.remove();
+}
+
+const view = k => current.show ? current.show(k) : k ? current.reveal || current.view : current.view;
+
+function nextTask() {
+  current = GAMES[game].make(levelOf());
+  current.steps = current.steps || [current.answer];
+  step = 0;
+  $('question').innerHTML = view(0);
+  $('answers').innerHTML = '';
+  $('answers').className = 'answers' + (current.options.length > 3 ? ' many' : '');
+  $('answers').style.gridTemplateColumns = `repeat(${current.options.length}, 1fr)`;
+  current.options.forEach(n => {
+    const b = document.createElement('button');
+    b.innerHTML = optHtml(n);
+    b.onclick = () => answer(n, b);
+    $('answers').append(b);
+  });
+  if (!calm) $('question').firstChild.animate([{ transform: 'scale(.8)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 250, easing: 'ease-out' });
+  locked = false;
+}
+
+function answer(n, btn) {
+  if (locked) return;
+  const ok = n === current.steps[step];
+  beep(ok);
+  // međukorak višekoračnog zadatka (tri broja, poredaj)
+  if (ok && step < current.steps.length - 1) {
+    step++;
+    $('question').innerHTML = view(step);
+    btn.className = 'ok';
+    if (GAMES[game].sticky) btn.disabled = true;
+    else setTimeout(() => btn.className = '', 250);
+    return;
+  }
+  locked = true;
+  const before = levelOf();
+  if (ok) {
+    streak++; solved++;
+    const pts = 10 * before * (streak >= 3 ? 2 : 1); // teža razina = više bodova, niz od 3+ = dupli
+    score += pts;
+    floatText('+' + pts, btn);
+  } else {
+    streak = 0; // nema minus bodova
+    btn.className = 'bad';
+    if (!calm) btn.animate([0, -12, 12, -8, 8, 0].map(x => ({ transform: `translateX(${x}px)` })), { duration: 400 });
+  }
+  $('answers').children[current.options.indexOf(current.steps[step])].className = 'ok';
+  $('question').innerHTML = view(current.steps.length);
+  renderStatus();
+  if (levelOf() > before) levelUp(levelOf());
+  setTimeout(() => timer && nextTask(), (ok ? 650 : 1500) + (game === 'slovo' ? 500 : 0) + (levelOf() > before ? 600 : 0));
+}
+
+// Upute s riješenim primjerom prije svake runde
+function startGame() {
+  const g = GAMES[game];
+  setColor(g.color);
+  $('introTitle').textContent = g.title;
+  $('introHow').textContent = g.how;
+  const ex = g.make(1), steps = ex.steps || [ex.answer];
+  $('exQ').innerHTML = ex.show ? ex.show(steps.length) : ex.reveal || ex.view;
+  $('exA').style.gridTemplateColumns = `repeat(${ex.options.length}, 1fr)`;
+  $('exA').innerHTML = '';
+  ex.options.forEach(o => { const b = document.createElement('button'); b.innerHTML = optHtml(o); if (steps.includes(o)) b.className = 'ok'; $('exA').append(b); });
+  $('introRules').innerHTML = [
+    ['⏱', `Imaš ${durLabel(seconds)}.`],
+    ['+', 'Točan odgovor donosi bodove.'],
+    ['x2', 'Tri točna zaredom: dupli bodovi!'],
+    ...(g.maxLevel ? [['↑', `Svakih ${PER_LEVEL} točnih: teža razina i više bodova.`]] : []),
+  ].map(([i, t]) => `<li><b>${i}</b>${t}</li>`).join('');
+  show('introScreen');
+}
+
+function play() {
+  score = 0; streak = 0; solved = 0;
+  let left = seconds;
+  setColor(GAMES[game].color);
+  $('who').replaceChildren(chip(avatar, player));
+  renderStatus();
+  const bar = $('timer');
+  bar.className = 'timer';
+  bar.firstChild.style.transition = 'none';
+  bar.firstChild.style.width = '100%';
+  show('gameScreen');
+  bar.offsetWidth; // reset trake prije nove animacije
+  bar.firstChild.style.transition = '';
+  timer = setInterval(() => {
+    left--;
+    bar.firstChild.style.width = (left / seconds * 100) + '%';
+    bar.classList.toggle('low', left <= Math.min(10, seconds / 3));
+    if (left <= 0) endGame();
+  }, 1000);
+  nextTask();
+}
+
+function endGame() {
+  clearInterval(timer); timer = null;
+  const board = load(game);
+  const order = () => ranked(board).map(e => e[0]);
+  const oldIdx = order().indexOf(player);
+  const best = board[player]?.score ?? -1;
+  board[player] = { avatar, score: Math.max(score, best) };
+  save(game, board);
+  $('bravo').textContent = `Bravo, ${player}!`;
+  $('tags').innerHTML = '';
+  renderBoard($('board'), game);
+  show('endScreen');
+  countUp($('result'), score);
+  if (score > best && best >= 0) setTimeout(() => tag(STAR.replace('#f5b700', '#fff'), 'Novi rekord!'), calm ? 0 : 700);
+  confetti(30);
+  climb(oldIdx, order().indexOf(player));
+}
+
+pickScreen();
+</script>
+</body>
+</html>
