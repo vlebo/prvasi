@@ -128,6 +128,13 @@
   .about { position: relative; max-width: 640px; margin: 0 auto 20px; background: #fff; border-radius: 20px; padding: 16px 48px 16px 20px;
            box-shadow: 0 4px 0 var(--line); text-align: left; }
   .close { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; border-radius: 50%; background: var(--line); font-size: 1.4rem; font-weight: 900; line-height: 1; }
+  .scene { display: flex; gap: 12px; justify-content: center; font-size: clamp(3rem, 10vw, 5rem); }
+  .scene span { background: #fff; border-radius: 22px; padding: 6px 14px; box-shadow: 0 5px 0 var(--line); transition: background .2s; }
+  .scene .hit { background: var(--ok); }
+  .dir { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 20px; font-size: clamp(1.6rem, 5vw, 2.4rem); font-weight: 800; flex-wrap: wrap; }
+  .dir svg { width: 1.6em; height: 1.6em; }
+  .dir b { color: var(--c); }
+  .dir .ref { font-size: 1.6em; }
   .reset { margin-top: 32px; background: none; color: var(--muted); text-decoration: underline; font-size: 1rem; }
   [hidden] { display: none !important; }
 </style>
@@ -288,6 +295,18 @@ const BASE = ['crvena', 'žuta', 'plava', 'bijela', 'crna'];
 // svaka kombinacija × oba redoslijeda × koja boja nedostaje (0, 1 ili rezultat) = 36 zadataka
 const MIX_TASKS = MIXES.flatMap(([x, y, r]) => [[x, y, r], [y, x, r]]).flatMap(m => [0, 1, 2].map(miss => [...m, miss]));
 
+// Zadnje slovo: riječi grupirane po zadnjem slovu, da ne bude stalno "A"
+const BY_LAST = WORDS.reduce((m, w) => ((m[w[1].at(-1)] ||= []).push(w), m), {});
+const ALL_LETTERS = [...new Set([...LETTERS, ...Object.keys(BY_LAST)])];
+
+// Gdje živi: [mjesto, opis]; životinje bez dvojbe (npr. bez žabe)
+const HOMES = { '🌊': ['u vodi', ['🐟','🐬','🐳','🐙','🦀','🐠']],
+                '🌳': ['u šumi', ['🦊','🐻','🐺','🦉','🐿️','🦔','🦌']],
+                '🏡': ['uz čovjeka', ['🐄','🐖','🐑','🐓','🐐','🐴','🐕','🐈']] };
+const HOME_ANIMALS = Object.entries(HOMES).flatMap(([h, [, list]]) => list.map(a => [a, h]));
+
+const arrow = left => `<svg viewBox="0 0 24 24"><path fill="none" style="stroke:var(--c)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" d="${left ? 'M20 12H5M11 5l-7 7 7 7' : 'M4 12h15M13 5l7 7-7 7'}"/></svg>`;
+
 const GAMES = {
   racunko: { title: 'Računko', learns: 'zbrajanje i oduzimanje do 10', color: '#5b6cff', how: 'Izračunaj zadatak i dodirni točan broj.',
     icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/><path d="M18 38h28M32 24v28M54 66h28" stroke="#fff" stroke-width="9" stroke-linecap="round"/></svg>',
@@ -423,11 +442,54 @@ const GAMES = {
         `<div class="word" style="font-size:1.6rem;letter-spacing:0">${k ? `${a} + ${b} = ${r}` : ''}</div></div>`;
       return { view: view(0), reveal: view(1), answer: COLORS[answer], options: shuffle(opts.map(c => COLORS[c])) };
     } },
+  zadnje: { title: 'Zadnje slovo', learns: 'glasove i zadnje slovo u riječi', color: '#b5651d',
+    how: 'Pogledaj sliku i reci riječ. Kojim slovom završava? Dodirni slovo.',
+    icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/><text x="50" y="66" font-size="44" font-weight="900" text-anchor="middle" fill="#fff" font-family="system-ui">..a</text></svg>',
+    make() {
+      const last = draw('zadnje', Object.keys(BY_LAST));
+      const list = BY_LAST[last], [pic, word] = list[rnd(list.length)];
+      const opts = new Set([last]);
+      while (opts.size < 3) opts.add(ALL_LETTERS[rnd(ALL_LETTERS.length)]);
+      return { view: `<div><div class="pic">${pic}</div><div class="word"></div></div>`,
+               reveal: `<div><div class="pic">${pic}</div><div class="word">${word.slice(0, -1)}<b>${last}</b></div></div>`,
+               answer: last, options: shuffle([...opts]) };
+    } },
+  gdje: { title: 'Gdje živi?', learns: 'životinje i gdje žive: u vodi, u šumi, uz čovjeka', color: '#4d908e',
+    how: 'Gdje živi ova životinja: u vodi, u šumi ili uz čovjeka? Ili obrnuto: koja od ponuđenih životinja živi na tom mjestu? Dodirni.',
+    icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/><path d="M22 70h56M30 70V48l20-16 20 16v22" fill="none" stroke="#fff" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/></svg>',
+    make() {
+      const [animal, home] = draw('gdje', HOME_ANIMALS);
+      const pic = (p, text) => `<div><div class="pic">${p}</div><div class="word" style="letter-spacing:0">${text}</div></div>`;
+      const reveal = pic(animal, `${animal} živi ${HOMES[home][0]}`);
+      if (Math.random() < 0.5) return { view: pic(animal, ''), reveal, answer: home, options: shuffle(Object.keys(HOMES)) };
+      // obrnuto: zadano mjesto, traži se životinja; ostale dvije su iz drugih mjesta
+      const others = Object.keys(HOMES).filter(h => h !== home).map(h => HOMES[h][1][rnd(HOMES[h][1].length)]);
+      return { view: pic(home, ''), reveal, answer: animal, options: shuffle([animal, ...others]) };
+    } },
+  strane: { title: 'Lijevo ili desno', learns: 'snalaženje u prostoru: lijevo i desno', color: '#3a86ff', maxLevel: 2,
+    how: 'Pogledaj strelicu. Tko je skroz lijevo ili desno? Na razini 2: tko je lijevo ili desno od zadane životinje?',
+    icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/><path d="M44 50H18M28 38L16 50l12 12M56 50h26M72 38l12 12-12 12" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    // 1: tko je skroz lijevo/desno · 2: tko je lijevo/desno od X
+    make(level) {
+      const scene = shuffle([...AVATARS]).slice(0, 4), left = Math.random() < 0.5;
+      let ref = null, answer, options;
+      if (level === 1) {
+        answer = scene[left ? 0 : 3];
+        options = shuffle([answer, ...shuffle(scene.filter(x => x !== answer)).slice(0, 2)]);
+      } else {
+        const i = left ? 1 + rnd(3) : rnd(3);
+        ref = scene[i]; answer = scene[left ? i - 1 : i + 1];
+        options = shuffle(scene.filter(x => x !== ref));
+      }
+      const view = k => `<div><div class="scene">${scene.map(x => `<span class="${k && x === answer ? 'hit' : ''}">${x}</span>`).join('')}</div>` +
+        `<div class="dir">${arrow(left)}${ref ? `<span>Tko je <b>${left ? 'LIJEVO' : 'DESNO'}</b> od</span> <span class="ref">${ref}</span>` : `<span>Tko je skroz <b>${left ? 'LIJEVO' : 'DESNO'}</b>?</span>`}</div></div>`;
+      return { view: view(0), reveal: view(1), answer, options };
+    } },
 };
 
 // Predmeti, redom kako se prikazuju
-const SUBJECTS = { 'Matematika': ['racunko', 'brojalica', 'usporedi', 'poredaj', 'niz'], 'Hrvatski jezik': ['slovo', 'slogovi'],
-                   'Priroda i društvo': ['uljez'], 'Likovna kultura': ['boje'] };
+const SUBJECTS = { 'Matematika': ['racunko', 'brojalica', 'usporedi', 'poredaj', 'niz', 'strane'], 'Hrvatski jezik': ['slovo', 'zadnje', 'slogovi'],
+                   'Priroda i društvo': ['uljez', 'gdje'], 'Likovna kultura': ['boje'] };
 console.assert(Object.values(SUBJECTS).flat().sort().join() === Object.keys(GAMES).sort().join(), 'svaka igra u točno jednom predmetu');
 
 // self-check generatora
