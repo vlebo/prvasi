@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Igre za prvašiće</title>
+<title>Edukativne igre za prvašiće</title>
 <style>
   :root { --bg:#f6f2ea; --ink:#2f2a3a; --muted:#8a8494; --line:#e7e0d4; --ok:#2bb673; --bad:#ef5350;
           --gold:#f5b700; --silver:#aeb7c4; --bronze:#d08a4a; --c:#5b6cff; }
@@ -57,6 +57,7 @@
   .board.big .row { font-size: 1.5rem; padding: 8px 14px; }
   .board.big .rank { width: 40px; height: 40px; font-size: 1.2rem; }
   .menu { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 18px; margin: 8px 0 24px; }
+  .learns { display: block; font-size: 1rem; font-weight: 700; opacity: .85; margin-top: 6px; }
   .subject { text-align: left; font-size: 1.4rem; font-weight: 900; color: var(--muted); margin: 24px 4px 8px; text-transform: uppercase; letter-spacing: .05em; }
   .dot { display: inline-block; width: 1em; height: 1em; border-radius: 50%; border: 4px solid rgba(0,0,0,.12); vertical-align: middle; }
   .claps { display: flex; justify-content: center; gap: 10px; margin-top: 8px; }
@@ -124,6 +125,9 @@
   .rules li b { flex: none; width: 44px; height: 44px; border-radius: 50%; background: var(--c); color: #fff; display: grid; place-items: center; }
   .del { background: rgba(255,255,255,.2); border-radius: 50%; width: 38px; height: 38px; display: grid; place-items: center; flex: none; }
   .del:hover { background: rgba(255,255,255,.4); }
+  .about { position: relative; max-width: 640px; margin: 0 auto 20px; background: #fff; border-radius: 20px; padding: 16px 48px 16px 20px;
+           box-shadow: 0 4px 0 var(--line); text-align: left; }
+  .close { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; border-radius: 50%; background: var(--line); font-size: 1.4rem; font-weight: 900; line-height: 1; }
   .reset { margin-top: 32px; background: none; color: var(--muted); text-decoration: underline; font-size: 1rem; }
   [hidden] { display: none !important; }
 </style>
@@ -132,7 +136,11 @@
 <main>
   <!-- 1. Odabir igrača -->
   <section id="pickScreen">
-    <h1>Igre za prvašiće</h1>
+    <h1>Edukativne igre za prvašiće</h1>
+    <p class="sub about" id="about">
+      <button class="close" id="aboutClose" aria-label="Zatvori">×</button>Kratke igre za vježbu gradiva 1. razreda iz matematike, hrvatskog jezika,
+      prirode i društva te likovne kulture. Igra se bez čitanja i bez prijave, a rezultati i rang liste spremaju se samo na ovom uređaju.
+    </p>
     <p class="sub" style="margin:0 0 8px">Trajanje igre</p>
     <div class="seg" id="durations"></div>
     <p class="sub">Tko igra?</p>
@@ -158,6 +166,7 @@
   <!-- 2b. Upute -->
   <section id="introScreen" hidden>
     <h1 id="introTitle"></h1>
+    <p class="sub" id="introLearns"></p>
     <p class="sub" id="introHow" style="font-size:1.6rem;color:var(--ink);max-width:640px;margin:0 auto 16px"></p>
     <div class="card example"><div class="q" id="exQ"></div><div class="answers" id="exA"></div></div>
     <ul class="rules" id="introRules"></ul>
@@ -229,6 +238,16 @@ const eq = (a, op, b, r) => `<div class="eq"><span>${a}</span><span class="op">$
 const dot = c => `<span class="dot" style="background:${c}"></span>`;
 // opcija je boja (#hex) ili tekst/broj/emoji
 const optHtml = o => typeof o === 'string' && o[0] === '#' ? dot(o) : String(o);
+// Nasumično bez ponavljanja: isti element tek kad se cijeli popis iskoristi
+const bags = {};
+function draw(name, list) {
+  const last = bags[name + ':last'];
+  if (!bags[name]?.length) {
+    bags[name] = shuffle([...list]);
+    if (list.length > 1 && bags[name].at(-1) === last) bags[name].unshift(bags[name].pop()); // ne dvaput zaredom preko granice
+  }
+  return bags[name + ':last'] = bags[name].pop();
+}
 const sign = (a, b) => a < b ? '<' : a > b ? '>' : '=';
 // prazna/aktivna/popunjena kućica za i-ti znak, kad je k znakova već upisano
 const slot = (v, i, k) => `<span class="slot${i < k ? ' filled' : i === k ? ' active' : ''}">${i < k ? v : i === k ? '?' : '&nbsp;'}</span>`;
@@ -261,17 +280,16 @@ const GROUPS = {
   prijevoz: { name: 'prijevozno sredstvo', items: ['🚗','🚌','🚲','🚂','✈️','🚢','🚜'], vs: ['voce', 'divlje'] },
 };
 
-const SEQUENCES = [[['🌅','☀️','🌇','🌙'], 'jutro → podne → večer → noć'], [['🌸','☀️','🍂','⛄'], 'proljeće → ljeto → jesen → zima'],
-  [['🌰','🌱','🌳'], 'sjemenka → klica → stablo'], [['🥚','🐣','🐥','🐔'], 'jaje → pile → kokoš'],
-  [['👶','🧒','🧑','🧓'], 'beba → dijete → odrasla osoba → starija osoba']];
-
 const COLORS = { crvena: '#e53935', žuta: '#fdd835', plava: '#1e88e5', bijela: '#ffffff', crna: '#222222',
-                 narančasta: '#fb8c00', zelena: '#43a047', ljubičasta: '#8e24aa', ružičasta: '#f48fb1', siva: '#9e9e9e' };
+                 narančasta: '#fb8c00', zelena: '#43a047', ljubičasta: '#8e24aa', ružičasta: '#f48fb1', siva: '#9e9e9e', svijetloplava: '#90caf9' };
 const MIXES = [['crvena','žuta','narančasta'], ['plava','žuta','zelena'], ['crvena','plava','ljubičasta'],
-               ['crvena','bijela','ružičasta'], ['crna','bijela','siva']];
+               ['crvena','bijela','ružičasta'], ['plava','bijela','svijetloplava'], ['crna','bijela','siva']];
+const BASE = ['crvena', 'žuta', 'plava', 'bijela', 'crna'];
+// svaka kombinacija × oba redoslijeda × koja boja nedostaje (0, 1 ili rezultat) = 36 zadataka
+const MIX_TASKS = MIXES.flatMap(([x, y, r]) => [[x, y, r], [y, x, r]]).flatMap(m => [0, 1, 2].map(miss => [...m, miss]));
 
 const GAMES = {
-  racunko: { title: 'Računko', color: '#5b6cff', how: 'Izračunaj zadatak i dodirni točan broj.',
+  racunko: { title: 'Računko', learns: 'zbrajanje i oduzimanje do 10', color: '#5b6cff', how: 'Izračunaj zadatak i dodirni točan broj.',
     icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/><path d="M18 38h28M32 24v28M54 66h28" stroke="#fff" stroke-width="9" stroke-linecap="round"/></svg>',
     // do 10, bez negativnih rezultata
     make() {
@@ -281,40 +299,56 @@ const GAMES = {
       const answer = plus ? a + b : a - b, op = plus ? '+' : '−';
       return { view: eq(a, op, b, '?'), reveal: eq(a, op, b, answer), answer, options: numberOptions(answer) };
     } },
-  brojalica: { title: 'Brojalica', color: '#1fa774', how: 'Prebroji točkice i dodirni koliko ih ima.',
+  brojalica: { title: 'Brojalica', learns: 'brojanje i prepoznavanje količine do 10', color: '#1fa774', how: 'Prebroji točkice i dodirni koliko ih ima.',
     icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/>' +
       [[30,38],[50,38],[70,38],[30,62],[50,62]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="8" fill="#fff"/>`).join('') + '</svg>',
     make() {
       const answer = 1 + rnd(10);
       return { view: frame(answer), answer, options: numberOptions(answer, 1) };
     } },
-  slovo: { title: 'Prvo slovo', color: '#f07b2e', how: 'Pogledaj sliku. Kojim slovom počinje ta riječ? Dodirni slovo.',
+  slovo: { title: 'Prvo slovo', learns: 'glasove i prvo slovo u riječi', color: '#f07b2e', how: 'Pogledaj sliku. Kojim slovom počinje ta riječ? Dodirni slovo.',
     icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/><text x="50" y="67" font-size="48" font-weight="900" text-anchor="middle" fill="#fff" font-family="system-ui">Aa</text></svg>',
     make() {
-      const [pic, word] = WORDS[rnd(WORDS.length)];
+      const [pic, word] = draw('slovo', WORDS);
       const opts = new Set([word[0]]);
       while (opts.size < 3) opts.add(LETTERS[rnd(LETTERS.length)]);
       return { view: `<div><div class="pic">${pic}</div><div class="word"></div></div>`,
                reveal: `<div><div class="pic">${pic}</div><div class="word"><b>${word[0]}</b>${word.slice(1)}</div></div>`,
                answer: word[0], options: shuffle([...opts]) };
     } },
-  usporedi: { title: 'Veće ili manje', color: '#d94f8a', maxLevel: 4,
-    how: 'Usporedi brojeve i dodirni znak koji ide u praznu kućicu: < manje, > veće, = jednako.',
+  usporedi: { title: 'Veće ili manje', learns: 'uspoređivanje brojeva i znakove <, >, =', color: '#d94f8a', maxLevel: 5,
+    how: 'Usporedi brojeve i dodirni ono što ide u praznu kućicu: znak (< manje, > veće, = jednako) ili, na višoj razini, broj.',
     icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/><path d="M40 30L22 50l18 20M60 30l18 20-18 20" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    // 1: dva broja · 2: tri broja · 3: zbroj i broj · 4: zbroj i zbroj
+    // 1: dva broja · 2: izaberi broj · 3: tri broja · 4: zbroj i broj · 5: zbroj i zbroj
     make(level) {
+      if (level === 2) {
+        // npr. 7 > [?]: od 3 ponuđena broja točno jedan odgovara znaku
+        let a, op, ok, bad;
+        do {
+          a = rnd(MAX + 1); op = '<=>'[rnd(3)];
+          const all = [...Array(MAX + 1).keys()];
+          ok = all.filter(x => sign(a, x) === op);
+          bad = all.filter(x => sign(a, x) !== op);
+        } while (!ok.length || bad.length < 2);
+        const answer = ok[rnd(ok.length)], left = Math.random() < 0.5; // nepoznati broj lijevo ili desno
+        const opFlip = { '<': '>', '>': '<', '=': '=' }[op];
+        const show = k => '<div class="eq">' + (left
+          ? `${slot(answer, 0, k)}<span class="op">${opFlip}</span><span class="box">${a}</span>`
+          : `<span class="box">${a}</span><span class="op">${op}</span>${slot(answer, 0, k)}`) + '</div>';
+        return { show, steps: [answer], options: shuffle([answer, ...shuffle(bad).slice(0, 2)]) };
+      }
       const near = x => Math.random() < 0.2 ? x : rnd(MAX + 1); // "=" ne smije biti prerijedak
       const sum = (total = rnd(MAX + 1)) => { const x = rnd(total + 1); return [total, `${x}+${total - x}`]; };
       let items;
       if (level === 1) { const a = rnd(MAX + 1); items = [[a], [near(a)]]; }
-      else if (level === 2) { const a = rnd(MAX + 1), b = near(a); items = [[a], [b], [near(b)]]; }
-      else { const s1 = sum(); items = [s1, level === 3 ? [near(s1[0])] : sum(near(s1[0]))]; }
+      else if (level === 3) { const a = rnd(MAX + 1), b = near(a); items = [[a], [b], [near(b)]]; }
+      else { const s1 = sum(); items = [s1, level === 4 ? [near(s1[0])] : sum(near(s1[0]))]; }
       const steps = items.slice(1).map(([v], i) => sign(items[i][0], v));
       const show = k => `<div class="eq${level > 1 ? ' small' : ''}">` + items.map(([v, label = v], i) =>
         (i ? slot(steps[i - 1], i - 1, k) : '') + `<span class="box">${label}</span>`).join('') + '</div>';
       return { show, steps, options: ['<', '=', '>'] }; // uvijek isti redoslijed znakova
     } },
-  poredaj: { title: 'Poredaj brojeve', color: '#0e9fb3', maxLevel: 4, sticky: true,
+  poredaj: { title: 'Poredaj brojeve', learns: 'redoslijed brojeva od najmanjeg do najvećeg', color: '#0e9fb3', maxLevel: 4, sticky: true,
     how: 'Dodiruj brojeve redom, od najmanjeg do najvećeg. Kućice rastu kao brojevi. Na razini 4 ide obrnuto!',
     icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/><rect x="24" y="56" width="14" height="18" rx="4" fill="#fff"/><rect x="43" y="44" width="14" height="30" rx="4" fill="#fff"/><rect x="62" y="30" width="14" height="44" rx="4" fill="#fff"/></svg>',
     // 1: 3 broja · 2: 4 broja · 3: 5 brojeva · 4: 4 broja od najvećeg
@@ -328,11 +362,19 @@ const GAMES = {
         `<span class="slot${i < k ? ' filled' : i === k ? ' active' : ''}" style="font-size:${(down ? count - 1 - i : i) * .15 + .8}em">${i < k ? n : '&nbsp;'}</span>`).join('') + '</div>';
       return { show, steps, options: shuffle([...nums]) };
     } },
-  niz: { title: 'Nastavi niz', color: '#8a5cf6', maxLevel: 4,
-    how: 'Pogledaj kako se sličice ponavljaju. Koja dolazi sljedeća? Dodirni je.',
+  niz: { title: 'Nastavi niz', learns: 'uočavanje pravila u nizu sličica i brojeva', color: '#8a5cf6', maxLevel: 4,
+    how: 'Pogledaj kako se sličice ponavljaju ili kako brojevi rastu i padaju. Što dolazi sljedeće? Dodirni.',
     icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/><circle cx="22" cy="50" r="9" fill="#fff"/><rect x="36" y="41" width="18" height="18" rx="3" fill="#fff"/><circle cx="68" cy="50" r="9" fill="#fff"/><text x="86" y="60" font-size="28" font-weight="900" fill="#fff" text-anchor="middle" font-family="system-ui">?</text></svg>',
-    // 1: AB · 2: AAB / ABB · 3: ABC · 4: AABC / ABCC
+    // sličice: 1: AB · 2: AAB / ABB · 3: ABC · 4: AABC / ABCC
+    // brojevi: 1: +1 · 2: i −1 · 3: i +2 · 4: i −2
     make(level) {
+      if (Math.random() < 0.5) {
+        const step = [1, -1, 2, -2][rnd(level)], n = 4;
+        const start = step > 0 ? rnd(MAX - step * n + 1) : -step * n + rnd(MAX + step * n + 1); // cijeli niz unutar 0–MAX
+        const seq = Array.from({ length: n + 1 }, (_, i) => start + i * step), answer = seq[n];
+        const show = k => '<div class="eq small">' + seq.slice(0, n).map(x => `<span class="box">${x}</span>`).join('') + slot(answer, 0, k) + '</div>';
+        return { show, steps: [answer], options: numberOptions(answer) };
+      }
       const sets = [['#e53935', '#1e88e5', '#fdd835', '#43a047'], ['🍎', '🍌', '🍇', '🍐'], ['⭐', '🌙', '❤️', '☀️'], ['🐱', '🐶', '🐭', '🐰']];
       const [a, b, c, d] = shuffle([...sets[rnd(sets.length)]]);
       const pattern = shuffle([[[a, b]], [[a, a, b], [a, b, b]], [[a, b, c]], [[a, a, b, c], [a, b, c, c]]][level - 1])[0];
@@ -345,20 +387,20 @@ const GAMES = {
         seq.slice(0, len).map(x => `<span>${optHtml(x)}</span>`).join('') + slot(optHtml(answer), 0, k) + '</div>';
       return { show, steps: [answer], options: shuffle([...opts].slice(0, 3)) };
     } },
-  slogovi: { title: 'Slogovi', color: '#d4a017',
+  slogovi: { title: 'Slogovi', learns: 'rastavljanje riječi na slogove', color: '#d4a017',
     how: 'Izgovori riječ sa slike i pljesni za svaki slog. Koliko puta si pljesnuo/la?',
     icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/><rect x="16" y="40" width="20" height="20" rx="6" fill="#fff"/><rect x="40" y="40" width="20" height="20" rx="6" fill="#fff"/><rect x="64" y="40" width="20" height="20" rx="6" fill="#fff"/></svg>',
     make() {
-      const [pic, word, n] = SYLLABLES[rnd(SYLLABLES.length)];
+      const [pic, word, n] = draw('slogovi', SYLLABLES);
       return { view: `<div><div class="pic">${pic}</div><div class="word"></div></div>`,
                reveal: `<div><div class="pic">${pic}</div><div class="word">${word}</div><div class="claps">${'<i></i>'.repeat(n)}</div></div>`,
                answer: n, options: [1, 2, 3, 4] };
     } },
-  uljez: { title: 'Uljez', color: '#6a994e',
+  uljez: { title: 'Uljez', learns: 'razvrstavanje: voće, povrće, životinje, prijevoz', color: '#6a994e',
     how: 'Tri sličice idu zajedno, a jedna ne pripada. Pronađi uljeza!',
     icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/><circle cx="34" cy="36" r="11" fill="#fff"/><circle cx="66" cy="36" r="11" fill="#fff"/><circle cx="34" cy="68" r="11" fill="#fff"/><rect x="55" y="57" width="22" height="22" rx="3" fill="none" stroke="#fff" stroke-width="5"/></svg>',
     make() {
-      const ids = Object.keys(GROUPS), g = ids[rnd(ids.length)];
+      const g = draw('uljez', Object.keys(GROUPS));
       const other = GROUPS[g].vs[rnd(GROUPS[g].vs.length)];
       const odd = GROUPS[other].items[rnd(GROUPS[other].items.length)];
       const three = shuffle([...GROUPS[g].items]).slice(0, 3);
@@ -367,33 +409,25 @@ const GAMES = {
       return { view: hint, reveal: `<div class="word" style="letter-spacing:0">${odd} nije ${GROUPS[g].name}</div>`,
                answer: odd, options: shuffle([...three, odd]) };
     } },
-  redoslijed: { title: 'Što ide prije?', color: '#2a9d8f', sticky: true,
-    how: 'Dodiruj sličice redom: što je prvo, što poslije, a što na kraju.',
-    icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/><circle cx="22" cy="50" r="10" fill="#fff"/><circle cx="50" cy="50" r="10" fill="#fff"/><circle cx="78" cy="50" r="10" fill="#fff"/><path d="M33 50h6M61 50h6" stroke="#fff" stroke-width="5" stroke-linecap="round"/></svg>',
-    make() {
-      const [steps, name] = SEQUENCES[rnd(SEQUENCES.length)];
-      const show = k => '<div><div class="eq small">' + steps.map((x, i) => (i ? '<span class="op" style="font-size:.6em">→</span>' : '') +
-        `<span class="slot${i < k ? ' filled' : i === k ? ' active' : ''}">${i < k ? x : '&nbsp;'}</span>`).join('') + '</div>' +
-        `<div class="word" style="font-size:1.6rem;letter-spacing:0">${k === steps.length ? name : ''}</div></div>`;
-      return { show, steps, options: shuffle([...steps]) };
-    } },
-  boje: { title: 'Miješanje boja', color: '#e76f51',
-    how: 'Koja boja nastane kad pomiješaš ove dvije? Dodirni je.',
+  boje: { title: 'Miješanje boja', learns: 'miješanje osnovnih boja', color: '#e76f51',
+    how: 'Koja boja nedostaje? Što nastane kad pomiješaš dvije boje? Dodirni krug s pravom bojom.',
     icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/><circle cx="40" cy="42" r="18" fill="#fff" opacity=".9"/><circle cx="60" cy="42" r="18" fill="#fff" opacity=".6"/><circle cx="50" cy="60" r="18" fill="#fff" opacity=".75"/></svg>',
     make() {
-      const [x, y, r] = MIXES[rnd(MIXES.length)];
-      const [a, b] = shuffle([x, y]);
-      const opts = new Set([r]);
-      while (opts.size < 3) opts.add(MIXES[rnd(MIXES.length)][2]);
-      const view = k => `<div><div class="eq">${dot(COLORS[a])}<span class="op">+</span>${dot(COLORS[b])}<span class="op">=</span>${slot(dot(COLORS[r]), 0, k)}</div>` +
+      const [a, b, r, miss] = draw('boje', MIX_TASKS);
+      const parts = [a, b, r], answer = parts[miss];
+      // ponuđene boje iste vrste kao tražena (osnovne ili rezultati), bez one koja je već na ekranu
+      const pool = (miss === 2 ? MIXES.map(m => m[2]) : BASE).filter(c => c !== answer && !parts.includes(c));
+      const opts = [answer, ...shuffle(pool).slice(0, 2)];
+      const cell = (c, i, k) => i === miss ? slot(dot(COLORS[c]), 0, k) : dot(COLORS[c]);
+      const view = k => `<div><div class="eq">${cell(a, 0, k)}<span class="op">+</span>${cell(b, 1, k)}<span class="op">=</span>${cell(r, 2, k)}</div>` +
         `<div class="word" style="font-size:1.6rem;letter-spacing:0">${k ? `${a} + ${b} = ${r}` : ''}</div></div>`;
-      return { view: view(0), reveal: view(1), answer: COLORS[r], options: shuffle([...opts].map(c => COLORS[c])) };
+      return { view: view(0), reveal: view(1), answer: COLORS[answer], options: shuffle(opts.map(c => COLORS[c])) };
     } },
 };
 
 // Predmeti, redom kako se prikazuju
 const SUBJECTS = { 'Matematika': ['racunko', 'brojalica', 'usporedi', 'poredaj', 'niz'], 'Hrvatski jezik': ['slovo', 'slogovi'],
-                   'Priroda i društvo': ['uljez', 'redoslijed'], 'Likovna kultura': ['boje'] };
+                   'Priroda i društvo': ['uljez'], 'Likovna kultura': ['boje'] };
 console.assert(Object.values(SUBJECTS).flat().sort().join() === Object.keys(GAMES).sort().join(), 'svaka igra u točno jednom predmetu');
 
 // self-check generatora
@@ -584,7 +618,7 @@ function menuScreen() {
     const b = document.createElement('button');
     b.className = 'game-card shade';
     b.style.setProperty('--c', g.color);
-    b.innerHTML = g.icon + g.title;
+    b.innerHTML = g.icon + g.title + `<small class="learns">${g.learns}</small>`;
     b.onclick = () => { game = id; startGame(); };
     return b;
   });
@@ -622,6 +656,10 @@ function goHome() {
   clearInterval(timer); timer = null; // prekinuta igra se ne sprema
   pickScreen();
 }
+
+// Uvodni opis se pokazuje dok ga netko ne zatvori
+$('about').hidden = !!localStorage.getItem('uvod-zatvoren');
+$('aboutClose').onclick = () => { localStorage.setItem('uvod-zatvoren', 1); $('about').hidden = true; };
 
 $('reset').onclick = () => {
   if (!confirm('Obrisati SVE rang liste i igrače?')) return;
@@ -706,6 +744,7 @@ function startGame() {
   const g = GAMES[game];
   setColor(g.color);
   $('introTitle').textContent = g.title;
+  $('introLearns').textContent = 'Vježbamo: ' + g.learns;
   $('introHow').textContent = g.how;
   const ex = g.make(1), steps = ex.steps || [ex.answer];
   $('exQ').innerHTML = ex.show ? ex.show(steps.length) : ex.reveal || ex.view;
