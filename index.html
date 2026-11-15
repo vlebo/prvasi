@@ -204,10 +204,11 @@
 </main>
 
 <script>
-const DURATIONS = [10, 30, 60, 120, 180];
-const durLabel = d => d < 60 ? `${d} s` : `${d / 60} min`;
+const DURATIONS = [30, 60, 90, 120];
+const durLabel = d => `${d} s`;
 const MAX = 10; // brojevi do 10; povećaj na 20 kad dođe gradivo (Brojalica je uvijek do 10)
-let seconds = +localStorage.getItem('trajanje') || 60;
+let seconds = +localStorage.getItem('trajanje');
+if (!DURATIONS.includes(seconds)) seconds = 60; // npr. spremljeno staro trajanje koje više ne postoji
 const AVATARS = ['🦊','🐸','🦄','🐼','🐯','🐵','🐰','🐻','🐱','🐶','🐧','🐞','🐨','🦁','🐷','🐙'];
 const avBg = a => AVATARS.includes(a) ? `hsl(${AVATARS.indexOf(a) * 360 / AVATARS.length} 85% 88%)` : '#fff';
 const STAR = '<svg viewBox="0 0 24 24" width="30" height="30"><path fill="#f5b700" d="M12 2l3 6.5 7 .8-5.2 4.8 1.4 7L12 17.6 5.8 21.1l1.4-7L2 9.3l7-.8z"/></svg>';
