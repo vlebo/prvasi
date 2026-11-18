@@ -12,6 +12,7 @@ Male obrazovne igre za djecu u prvom razredu. Igraju se u pregledniku, na mobite
 - **Veće ili manje**: usporedi brojeve
 - **Poredaj brojeve**: složi brojeve redom
 - **Nastavi niz**: što dolazi sljedeće?
+- **Brojevna crta**: koji broj nedostaje i gdje žabica doskoči (igra se s položenim mobitelom)
 - **Slogovi**: rastavi riječ na slogove
 - **Uljez**: pronađi ono što ne pripada skupini
 - **Miješanje boja**: koja boja nastaje kad pomiješaš dvije?

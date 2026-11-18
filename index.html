@@ -137,6 +137,30 @@
   .dir .ref { font-size: 1.6em; }
   .reset { margin-top: 32px; background: none; color: var(--muted); text-decoration: underline; font-size: 1rem; }
   [hidden] { display: none !important; }
+  /* brojevi kao dio brojevne crte: stupci poravnati s crticama u SVG-u */
+  .q:has(+ .answers.line) { margin-bottom: 0; place-items: end center; }
+  .answers.line { width: min(100%, 900px); margin: 0 auto; gap: 0; }
+  .answers.line button { font-size: min(2.2rem, min(100vw - 32px, 900px) / var(--n) * .55); border-radius: 12px; padding: 4px 0; min-height: 2em; }
+  .answers.line button:not(.ok, .bad) { background: transparent; box-shadow: none; }
+  @media (hover: hover) { .answers.line button:not(.ok, .bad):hover { background: color-mix(in srgb, var(--c) 15%, white); } } /* na dodiru hover ostaje zalijepljen */
+  .hop { animation: hop .3s backwards; }
+  @keyframes hop { from { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .hop { animation: none; } }
+  /* igre s dugom crtom: na uskom uspravnom ekranu traži okretanje */
+  .rotate { display: none; font-size: 1.8rem; font-weight: 900; padding: 40px 16px; }
+  .rotate div { font-size: 5rem; animation: turn 1.6s infinite ease-in-out; }
+  @keyframes turn { 50% { transform: rotate(-90deg); } }
+  @media (orientation: portrait) and (max-width: 700px) {
+    body.need-landscape :is(#introScreen, #gameScreen) > :not(.rotate, .top) { display: none; }
+    body.need-landscape .rotate { display: block; }
+  }
+  @media (orientation: landscape) and (max-height: 500px) {
+    body.need-landscape main { padding: 6px 16px; }
+    body.need-landscape :is(.pill, .chip) { font-size: 1.1rem; padding-block: 2px; }
+    body.need-landscape .timer { height: 10px; margin: 6px 0; }
+    body.need-landscape :is(#level, #streak) { display: inline-flex; vertical-align: middle; min-height: 0; height: 26px; margin: 0 10px; }
+    body.need-landscape .q { min-height: 0; margin: 0 auto 6px; }
+  }
 </style>
 </head>
 <body class="shade">
@@ -172,6 +196,7 @@
 
   <!-- 2b. Upute -->
   <section id="introScreen" hidden>
+    <div class="rotate"><div>📱</div>Okreni mobitel!</div>
     <h1 id="introTitle"></h1>
     <p class="sub" id="introLearns"></p>
     <p class="sub" id="introHow" style="font-size:1.6rem;color:var(--ink);max-width:640px;margin:0 auto 16px"></p>
@@ -184,6 +209,7 @@
   <!-- 3. Igra -->
   <section id="gameScreen" hidden>
     <div class="top"><span id="who"></span><button class="btn ghost small" onclick="goHome()">Početna</button><span class="pill" id="scorePill"></span></div>
+    <div class="rotate"><div>📱</div>Okreni mobitel!</div>
     <div class="timer" id="timer"><div></div></div>
     <div class="level" id="level"></div>
     <div class="streak" id="streak"></div>
@@ -218,12 +244,12 @@ const $ = id => document.getElementById(id);
 const rnd = n => Math.floor(Math.random() * n);
 const shuffle = a => a.sort(() => Math.random() - 0.5);
 
-// 3 ponuđena broja 0–10, uključujući točan
-function numberOptions(answer, min = 0) {
+// 3 ponuđena broja min–max, uključujući točan
+function numberOptions(answer, min = 0, max = MAX) {
   const opts = new Set([answer]);
   while (opts.size < 3) {
     const o = answer + rnd(7) - 3;
-    if (o >= min && o <= MAX) opts.add(o);
+    if (o >= min && o <= max) opts.add(o);
   }
   return shuffle([...opts]);
 }
@@ -305,6 +331,24 @@ const HOMES = { '🌊': ['u vodi', ['🐟','🐬','🐳','🐙','🦀','🐠']],
                 '🌳': ['u šumi', ['🦊','🐻','🐺','🦉','🐿️','🦔','🦌']],
                 '🏡': ['uz čovjeka', ['🐄','🐖','🐑','🐓','🐐','🐴','🐕','🐈']] };
 const HOME_ANIMALS = Object.entries(HOMES).flatMap(([h, [, list]]) => list.map(a => [a, h]));
+
+// Brojevna crta 0–R kao SVG, bez brojeva: brojevi su gumbi ispod (.answers.line), poravnati s crticama.
+// Žaba na `frog`; skokovi `from`→`to` se crtaju jedan po jedan, žaba se pojavi na kraju.
+function numberLine(R, { frog = null, from = null, to = null, text = '' } = {}) {
+  const X = n => (n + .5) * 1000 / (R + 1), size = R > 10 ? 40 : 52;
+  let s = `<svg viewBox="0 0 1000 180" style="width:min(100%,900px);display:block"><defs><marker id="nl-arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--c)"/></marker></defs>`;
+  if (text) s += `<text x="500" y="50" font-size="46" font-weight="900" text-anchor="middle" fill="#2f2a3a">${text}</text>`;
+  s += `<line x1="${X(0) - 25}" y1="160" x2="${X(R) + 25}" y2="160" stroke="#2f2a3a" stroke-width="5" stroke-linecap="round"/>`;
+  for (let n = 0; n <= R; n++) s += `<line x1="${X(n)}" y1="146" x2="${X(n)}" y2="174" stroke="#2f2a3a" stroke-width="4"/>`;
+  if (from !== null) {
+    const d = to > from ? 1 : -1;
+    s += `<text x="${X(from)}" y="148" font-size="${size}" text-anchor="middle" opacity=".35">🐸</text>`;
+    for (let n = from, i = 0; n !== to; n += d, i++)
+      s += `<path class="hop" style="stroke:var(--c);animation-delay:${i * .3}s" d="M${X(n)} 140Q${(X(n) + X(n + d)) / 2} 70 ${X(n + d)} 140" fill="none" stroke-width="5" marker-end="url(#nl-arr)"/>`;
+    s += `<text class="hop" style="animation-delay:${Math.abs(to - from) * .3}s" x="${X(to)}" y="148" font-size="${size}" text-anchor="middle">🐸</text>`;
+  } else if (frog !== null) s += `<text x="${X(frog)}" y="148" font-size="${size}" text-anchor="middle">🐸</text>`;
+  return s + '</svg>';
+}
 
 const arrow = left => `<svg viewBox="0 0 24 24"><path fill="none" style="stroke:var(--c)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" d="${left ? 'M20 12H5M11 5l-7 7 7 7' : 'M4 12h15M13 5l7 7-7 7'}"/></svg>`;
 
@@ -486,10 +530,36 @@ const GAMES = {
         `<div class="dir">${arrow(left)}${ref ? `<span>Tko je <b>${left ? 'LIJEVO' : 'DESNO'}</b> od</span> <span class="ref">${ref}</span>` : `<span>Tko je skroz <b>${left ? 'LIJEVO' : 'DESNO'}</b>?</span>`}</div></div>`;
       return { view: view(0), reveal: view(1), answer, options };
     } },
+  crta: { title: 'Brojevna crta', learns: 'brojevnu crtu: redoslijed brojeva, zbrajanje i oduzimanje skokovima', color: '#2a9d8f', maxLevel: 4, landscape: true,
+    how: 'Okreni mobitel. Gdje je zadani broj? Broji crtice i dodirni pravo mjesto na crti. Na višoj razini žabica skače: kreni od žabice, broji skokove i dodirni mjesto na kojem će doskočiti.',
+    pause: 1500, // da se stigne vidjeti skok do točnog broja
+    icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/><path d="M14 64h72M22 56v16M50 56v16M78 56v16" stroke="#fff" stroke-width="6" stroke-linecap="round"/><path d="M22 50Q36 24 50 50" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/></svg>',
+    // odgovor je dodir na crtu: options su svi brojevi 0–R, labels što piše ispod crtice
+    // 1: gdje je broj · 2: i skokovi udesno (+), svi brojevi upisani · 3: skokovi udesno i ulijevo (−) · 4: sve, crta do 20
+    make(level) {
+      const R = level === 4 ? 20 : 10, options = [...Array(R + 1).keys()];
+      const kinds = [['where'], ['where', 'plus'], ['plus', 'minus'], ['where', 'plus', 'minus']][level - 1], kind = kinds[rnd(kinds.length)];
+      // upisano samo nekoliko brojeva (0, 5, 10… ili 3 nasumična), nikad točan odgovor: ostalo se broji po crticama
+      const someLabels = ans => {
+        const shown = Math.random() < 0.5 ? options.filter(n => n % 5 === 0) : shuffle(options.filter(n => n !== ans)).slice(0, 3);
+        return options.map(n => shown.includes(n) && n !== ans ? n : '');
+      };
+      if (kind === 'where') {
+        const answer = rnd(R + 1);
+        return { view: numberLine(R, { text: `Gdje je ${answer}?` }), reveal: numberLine(R, { frog: answer, text: `Gdje je ${answer}?` }),
+                 answer, options, labels: someLabels(answer) };
+      }
+      const b = 1 + rnd(level === 4 ? 6 : 5), plus = kind === 'plus';
+      const a = plus ? rnd(R - b + 1) : b + rnd(R - b + 1), answer = plus ? a + b : a - b;
+      const text = `${a} ${plus ? '+' : '−'} ${b} = `;
+      return { view: numberLine(R, { frog: a, text: text + '?' }), // skokovi tek u rješenju, inače odaju rezultat
+               reveal: numberLine(R, { from: a, to: answer, text: text + answer }),
+               answer, options, labels: level === 2 ? options : someLabels(answer) };
+    } },
 };
 
 // Predmeti, redom kako se prikazuju
-const SUBJECTS = { 'Matematika': ['racunko', 'brojalica', 'usporedi', 'poredaj', 'niz', 'strane'], 'Hrvatski jezik': ['slovo', 'zadnje', 'slogovi'],
+const SUBJECTS = { 'Matematika': ['racunko', 'brojalica', 'usporedi', 'poredaj', 'niz', 'crta', 'strane'], 'Hrvatski jezik': ['slovo', 'zadnje', 'slogovi'],
                    'Priroda i društvo': ['uljez', 'gdje'], 'Likovna kultura': ['boje'] };
 console.assert(Object.values(SUBJECTS).flat().sort().join() === Object.keys(GAMES).sort().join(), 'svaka igra u točno jednom predmetu');
 
@@ -617,6 +687,7 @@ function renderBoard(el, id) {
 }
 
 function show(id) {
+  document.body.classList.toggle('need-landscape', ['introScreen', 'gameScreen'].includes(id) && !!GAMES[game]?.landscape);
   ['pickScreen','menuScreen','introScreen','gameScreen','endScreen'].forEach(s => $(s).hidden = s !== id);
   scrollTo(0, 0);
 }
@@ -758,11 +829,12 @@ function nextTask() {
   step = 0;
   $('question').innerHTML = view(0);
   $('answers').innerHTML = '';
-  $('answers').className = 'answers' + (current.options.length > 3 ? ' many' : '');
+  $('answers').className = 'answers' + (current.labels ? ' line' : current.options.length > 3 ? ' many' : '');
   $('answers').style.gridTemplateColumns = `repeat(${current.options.length}, 1fr)`;
-  current.options.forEach(n => {
+  $('answers').style.setProperty('--n', current.options.length);
+  current.options.forEach((n, i) => {
     const b = document.createElement('button');
-    b.innerHTML = optHtml(n);
+    b.innerHTML = current.labels ? current.labels[i] : optHtml(n);
     b.onclick = () => answer(n, b);
     $('answers').append(b);
   });
@@ -795,11 +867,13 @@ function answer(n, btn) {
     btn.className = 'bad';
     if (!calm) btn.animate([0, -12, 12, -8, 8, 0].map(x => ({ transform: `translateX(${x}px)` })), { duration: 400 });
   }
-  $('answers').children[current.options.indexOf(current.steps[step])].className = 'ok';
+  const right = $('answers').children[current.options.indexOf(current.steps[step])];
+  right.className = 'ok';
+  right.innerHTML = optHtml(current.steps[step]); // broj se pokaže i ako ispod crtice nije pisao
   $('question').innerHTML = view(current.steps.length);
   renderStatus();
   if (levelOf() > before) levelUp(levelOf());
-  setTimeout(() => timer && nextTask(), (ok ? 650 : 1500) + (game === 'slovo' ? 500 : 0) + (levelOf() > before ? 600 : 0));
+  setTimeout(() => timer && nextTask(), (ok ? 650 : 1500) + (game === 'slovo' ? 500 : 0) + (GAMES[game].pause || 0) + (levelOf() > before ? 600 : 0));
 }
 
 // Upute s riješenim primjerom prije svake runde
@@ -812,8 +886,10 @@ function startGame() {
   const ex = g.make(1), steps = ex.steps || [ex.answer];
   $('exQ').innerHTML = ex.show ? ex.show(steps.length) : ex.reveal || ex.view;
   $('exA').style.gridTemplateColumns = `repeat(${ex.options.length}, 1fr)`;
+  $('exA').style.setProperty('--n', ex.options.length);
+  $('exA').className = 'answers' + (ex.labels ? ' line' : '');
   $('exA').innerHTML = '';
-  ex.options.forEach(o => { const b = document.createElement('button'); b.innerHTML = optHtml(o); if (steps.includes(o)) b.className = 'ok'; $('exA').append(b); });
+  ex.options.forEach((o, i) => { const b = document.createElement('button'); b.innerHTML = ex.labels && !steps.includes(o) ? ex.labels[i] : optHtml(o); if (steps.includes(o)) b.className = 'ok'; $('exA').append(b); });
   $('introRules').innerHTML = [
     ['⏱', `Imaš ${durLabel(seconds)}.`],
     ['+', 'Točan odgovor donosi bodove.'],
