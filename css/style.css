@@ -129,6 +129,8 @@ input:focus { border-color: var(--c); }
 .dir b { color: var(--c); }
 .dir .ref { font-size: 1.6em; }
 .reset { margin-top: 32px; background: none; color: var(--muted); text-decoration: underline; font-size: 1rem; }
+.foot { margin-top: 28px; color: var(--muted); font-weight: 700; font-size: 1rem; line-height: 1.7; }
+.foot a { color: var(--c); }
 [hidden] { display: none !important; }
 /* brojevi kao dio brojevne crte: stupci poravnati s crticama u SVG-u */
 .q:has(+ .answers.line) { margin-bottom: 0; place-items: end center; }
