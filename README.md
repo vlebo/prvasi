@@ -24,7 +24,29 @@ Svaka igra traje 30, 60, 90 ili 120 sekundi (bira se na početnoj stranici), a n
 
 ## Pokretanje
 
-Sve je u jednoj datoteci, `index.html`. Nije potreban build ni server: otvori je u pregledniku.
+Nije potreban build, ali zbog JavaScript modula ne radi dvoklikom (`file://`). Pokreni lokalni server:
+
+```
+python3 -m http.server
+```
+
+i otvori http://localhost:8000.
+
+## Struktura
+
+```
+index.html          zasloni (HTML)
+css/style.css       izgled
+js/main.js          tijek igre: zasloni, vrijeme, bodovi, razine
+js/ui.js            konfeti, zvuk, animacije rang liste
+js/scores.js        spremanje rang lista (localStorage)
+js/lib.js           pomoćne funkcije za igre
+js/words.js         riječi sa slikom (Prvo i Zadnje slovo)
+js/games/index.js   popis igara, predmeti i provjera generatora zadataka
+js/games/*.js       jedna datoteka po igri
+```
+
+Nova igra: napravi `js/games/ime.js` (`export default { title, learns, color, how, icon, make(level) }`) i dodaj je u `js/games/index.js` (u `GAMES` i u `SUBJECTS`).
 
 ## Hosting
 
