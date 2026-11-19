@@ -34,13 +34,13 @@ export default { title: 'Brojevna crta', learns: 'brojevnu crtu: redoslijed broj
     };
     if (kind === 'where') {
       const answer = rnd(R + 1);
-      return { view: numberLine(R, { text: `Gdje je ${answer}?` }), reveal: numberLine(R, { frog: answer, text: `Gdje je ${answer}?` }),
+      return { kind: 'pokaži broj', view: numberLine(R, { text: `Gdje je ${answer}?` }), reveal: numberLine(R, { frog: answer, text: `Gdje je ${answer}?` }),
                answer, options, labels: someLabels(answer) };
     }
     const b = 1 + rnd(level === 4 ? 6 : 5), plus = kind === 'plus';
     const a = plus ? rnd(R - b + 1) : b + rnd(R - b + 1), answer = plus ? a + b : a - b;
     const text = `${a} ${plus ? '+' : '−'} ${b} = `;
-    return { view: numberLine(R, { frog: a, text: text + '?' }), // skokovi tek u rješenju, inače odaju rezultat
+    return { kind: plus ? 'skok udesno (+)' : 'skok ulijevo (−)', view: numberLine(R, { frog: a, text: text + '?' }), // skokovi tek u rješenju, inače odaju rezultat
              reveal: numberLine(R, { from: a, to: answer, text: text + answer }),
              answer, options, labels: level === 2 ? options : someLabels(answer) };
   } };

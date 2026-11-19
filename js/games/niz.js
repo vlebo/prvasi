@@ -11,7 +11,7 @@ export default { title: 'Nastavi niz', learns: 'uočavanje pravila u nizu sliči
       const start = step > 0 ? rnd(MAX - step * n + 1) : -step * n + rnd(MAX + step * n + 1); // cijeli niz unutar 0–MAX
       const seq = Array.from({ length: n + 1 }, (_, i) => start + i * step), answer = seq[n];
       const show = k => '<div class="eq small">' + seq.slice(0, n).map(x => `<span class="box">${x}</span>`).join('') + slot(answer, 0, k) + '</div>';
-      return { show, steps: [answer], options: numberOptions(answer) };
+      return { kind: 'niz brojeva', show, steps: [answer], options: numberOptions(answer) };
     }
     const sets = [['#e53935', '#1e88e5', '#fdd835', '#43a047'], ['🍎', '🍌', '🍇', '🍐'], ['⭐', '🌙', '❤️', '☀️'], ['🐱', '🐶', '🐭', '🐰']];
     const [a, b, c, d] = shuffle([...sets[rnd(sets.length)]]);
@@ -23,5 +23,5 @@ export default { title: 'Nastavi niz', learns: 'uočavanje pravila u nizu sliči
     if (opts.size < 3) opts.add(d);
     const show = k => '<div class="eq small" style="flex-wrap:wrap;justify-content:center">' +
       seq.slice(0, len).map(x => `<span>${optHtml(x)}</span>`).join('') + slot(optHtml(answer), 0, k) + '</div>';
-    return { show, steps: [answer], options: shuffle([...opts].slice(0, 3)) };
+    return { kind: 'niz sličica', show, steps: [answer], options: shuffle([...opts].slice(0, 3)) };
   } };

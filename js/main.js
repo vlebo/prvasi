@@ -1,14 +1,17 @@
-import { $, AVATARS, optHtml } from './lib.js';
+import { $, AVATARS, optHtml, rnd, fresh } from './lib.js';
 import { avBg, STAR, calm, chip, confetti, floatText, countUp, tag, climb, beep } from './ui.js';
 import { load, save, remove, ranked } from './scores.js';
 import { GAMES, SUBJECTS } from './games/index.js';
+import { record, loadAll } from './progress.js';
+import { openParents } from './parents.js';
+import { showNews } from './news.js';
 
 const DURATIONS = [30, 60, 90, 120];
 const durLabel = d => `${d} s`;
 let seconds = +localStorage.getItem('trajanje');
 if (!DURATIONS.includes(seconds)) seconds = 60; // npr. spremljeno staro trajanje koje više ne postoji
 
-let player = null, avatar = AVATARS[0], game = null, score = 0, streak = 0, solved = 0, step = 0, current = null, timer = null, locked = false;
+let player = null, avatar = AVATARS[0], game = null, score = 0, streak = 0, solved = 0, step = 0, current = null, timer = null, locked = false, recent = new Set();
 const PER_LEVEL = 5; // točnih zadataka do sljedeće razine
 const levelOf = () => Math.min(GAMES[game].maxLevel || 1, 1 + Math.floor(solved / PER_LEVEL));
 
@@ -32,14 +35,14 @@ function renderBoard(el, id) {
 
 function show(id) {
   document.body.classList.toggle('need-landscape', ['introScreen', 'gameScreen'].includes(id) && !!GAMES[game]?.landscape);
-  ['pickScreen','menuScreen','introScreen','gameScreen','endScreen'].forEach(s => $(s).hidden = s !== id);
+  ['pickScreen','menuScreen','introScreen','gameScreen','endScreen','parentScreen'].forEach(s => $(s).hidden = s !== id);
   scrollTo(0, 0);
 }
 
 function pickScreen() {
   player = null;
   setColor('#5b6cff');
-  const all = Object.assign({}, ...Object.keys(GAMES).flatMap(id => DURATIONS.map(d => load(id, d)))); // svi igrači iz svih igara
+  const all = Object.assign({}, loadAll(), ...Object.keys(GAMES).flatMap(id => DURATIONS.map(d => load(id, d)))); // svi igrači iz svih igara
   $('players').innerHTML = '';
   const names = Object.entries(all).sort();
   names.forEach(([name, r]) => {
@@ -135,12 +138,22 @@ function goHome() {
   pickScreen();
 }
 
+// "Brava" za Kutak za roditelje: samo da ga dijete slučajno ne otvori, nije zaštita
+$('parents').onclick = () => {
+  const a = 12 + rnd(8), b = 3 + rnd(7), r = prompt(`Samo za roditelje: koliko je ${a} × ${b}?`);
+  if (r === null) return;
+  if (+r !== a * b) { alert('Nije točno.'); return; }
+  setColor('#5b6cff');
+  openParents();
+  show('parentScreen');
+};
+
 // Uvodni opis se pokazuje dok ga netko ne zatvori
 $('about').hidden = !!localStorage.getItem('uvod-zatvoren');
 $('aboutClose').onclick = () => { localStorage.setItem('uvod-zatvoren', 1); $('about').hidden = true; };
 
 $('reset').onclick = () => {
-  if (!confirm('Obrisati SVE rang liste i igrače?')) return;
+  if (!confirm('Obrisati SVE rang liste? Napredak djece u Kutku za roditelje ostaje.')) return;
   Object.keys(GAMES).forEach(id => DURATIONS.forEach(d => remove(id, d)));
   pickScreen();
 };
@@ -168,7 +181,7 @@ function levelUp(lv) {
 const view = k => current.show ? current.show(k) : k ? current.reveal || current.view : current.view;
 
 function nextTask() {
-  current = GAMES[game].make(levelOf());
+  current = fresh(() => GAMES[game].make(levelOf()), recent);
   current.steps = current.steps || [current.answer];
   step = 0;
   $('question').innerHTML = view(0);
@@ -201,6 +214,7 @@ function answer(n, btn) {
   }
   locked = true;
   const before = levelOf();
+  record(player, avatar, game, before, current.kind, ok);
   if (ok) {
     streak++; solved++;
     const pts = 10 * before * (streak >= 3 ? 2 : 1); // teža razina = više bodova, niz od 3+ = dupli
@@ -244,7 +258,7 @@ function startGame() {
 }
 
 function play() {
-  score = 0; streak = 0; solved = 0;
+  score = 0; streak = 0; solved = 0; recent = new Set();
   let left = seconds;
   setColor(GAMES[game].color);
   $('who').replaceChildren(chip(avatar, player));
@@ -287,3 +301,4 @@ function endGame() {
 Object.assign(window, { goHome, play, startGame, menuScreen });
 
 pickScreen();
+showNews();

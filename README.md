@@ -20,6 +20,8 @@ Male obrazovne igre za djecu u prvom razredu. Igraju se u pregledniku, na mobite
 - **Gdje živi?**: živi li životinja u vodi, u šumi ili uz čovjeka?
 - **Lijevo ili desno**: tko je lijevo, a tko desno?
 
+U **Kutku za roditelje** (gumb 👪 na početnoj, otvara se odgovorom na jednostavan račun) vidi se napredak svakog djeteta i što mu ide teže, a mogu se ispisati listići sa zadacima i rješenjima. Napredak je samo na tom uređaju, a može se spremiti u datoteku i učitati na drugom.
+
 Svaka igra traje 30, 60, 90 ili 120 sekundi (bira se na početnoj stranici), a najbolji rezultati spremaju se u rang listu u pregledniku (`localStorage`).
 
 ## Pokretanje
@@ -40,11 +42,16 @@ css/style.css       izgled
 js/main.js          tijek igre: zasloni, vrijeme, bodovi, razine
 js/ui.js            konfeti, zvuk, animacije rang liste
 js/scores.js        spremanje rang lista (localStorage)
+js/progress.js      napredak djece po igri i vrsti zadatka (localStorage, izvoz/uvoz u datoteku)
+js/parents.js       Kutak za roditelje: napredak i listići za ispis
+js/news.js          novosti koje se pokažu na početnoj nakon nove verzije
 js/lib.js           pomoćne funkcije za igre
 js/words.js         riječi sa slikom (Prvo i Zadnje slovo)
 js/games/index.js   popis igara, predmeti i provjera generatora zadataka
 js/games/*.js       jedna datoteka po igri
 ```
+
+Novost za korisnike: dodaj novi unos na vrh popisa `NEWS` u `js/news.js`.
 
 Nova igra: napravi `js/games/ime.js` (`export default { title, learns, color, how, icon, make(level) }`) i dodaj je u `js/games/index.js` (u `GAMES` i u `SUBJECTS`).
 

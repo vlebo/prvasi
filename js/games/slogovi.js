@@ -15,7 +15,7 @@ export default { title: 'Slogovi', learns: 'rastavljanje riječi na slogove', co
   icon: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="rgba(255,255,255,.2)"/><rect x="16" y="40" width="20" height="20" rx="6" fill="#fff"/><rect x="40" y="40" width="20" height="20" rx="6" fill="#fff"/><rect x="64" y="40" width="20" height="20" rx="6" fill="#fff"/></svg>',
   make() {
     const [pic, word, n] = draw('slogovi', SYLLABLES);
-    return { view: `<div><div class="pic">${pic}</div><div class="word"></div></div>`,
+    return { kind: `riječi s ${n} ${n === 1 ? 'slogom' : 'sloga'}`, view: `<div><div class="pic">${pic}</div><div class="word"></div></div>`,
              reveal: `<div><div class="pic">${pic}</div><div class="word">${word}</div><div class="claps">${'<i></i>'.repeat(n)}</div></div>`,
              answer: n, options: [1, 2, 3, 4] };
   } };

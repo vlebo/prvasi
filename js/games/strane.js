@@ -19,5 +19,5 @@ export default { title: 'Lijevo ili desno', learns: 'snalaženje u prostoru: lij
     }
     const view = k => `<div><div class="scene">${scene.map(x => `<span class="${k && x === answer ? 'hit' : ''}">${x}</span>`).join('')}</div>` +
       `<div class="dir">${arrow(left)}${ref ? `<span>Tko je <b>${left ? 'LIJEVO' : 'DESNO'}</b> od</span> <span class="ref">${ref}</span>` : `<span>Tko je skroz <b>${left ? 'LIJEVO' : 'DESNO'}</b>?</span>`}</div></div>`;
-    return { view: view(0), reveal: view(1), answer, options };
+    return { kind: left ? 'lijevo' : 'desno', view: view(0), reveal: view(1), answer, options };
   } };

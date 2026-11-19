@@ -11,6 +11,10 @@
   <!-- 1. Odabir igrača -->
   <section id="pickScreen">
     <h1>Edukativne igre za prvašiće</h1>
+    <div class="about news" id="news" hidden>
+      <button class="close" id="newsClose" aria-label="Zatvori">×</button><b>Novo!</b>
+      <ul id="newsList"></ul>
+    </div>
     <p class="sub about" id="about">
       <button class="close" id="aboutClose" aria-label="Zatvori">×</button>Kratke igre za vježbu gradiva 1. razreda iz matematike, hrvatskog jezika,
       prirode i društva te likovne kulture. Igra se bez čitanja i bez prijave, a rezultati i rang liste spremaju se samo na ovom uređaju.
@@ -25,6 +29,7 @@
       <div class="avatars" id="avatars"></div>
       <button class="btn" id="startNew">Dalje</button>
     </div>
+    <button class="btn ghost" id="parents" style="margin-top:20px">👪 Kutak za roditelje</button>
     <div id="boards"></div>
     <button class="reset" id="reset">Obriši rang liste</button>
     <footer class="foot">
@@ -74,7 +79,30 @@
     <button class="btn" style="--c:#9b5de5" onclick="menuScreen()">Druga igra</button>
     <button class="btn ghost" onclick="goHome()">Početna</button>
   </section>
+
+  <!-- 5. Kutak za roditelje -->
+  <section id="parentScreen" hidden>
+    <h1>Kutak za roditelje</h1>
+    <p class="sub">Napredak djece i listići za ispis. Sve se sprema samo na ovom uređaju.</p>
+    <div class="players" id="pPlayers"></div>
+    <div id="pReport"></div>
+    <div class="card pcard">
+      <h2>Listić za ispis</h2>
+      <p>10 zadataka iz odabrane igre. Rješenja su na posebnoj stranici (kod obostranog ispisa na poleđini).</p>
+      <select id="wsGame" aria-label="Igra"></select> <select id="wsLevel" aria-label="Razina"></select>
+      <label class="check"><input type="checkbox" id="wsFlip"> Rješenja naopako na dnu stranice</label>
+      <button class="btn" id="wsPrint">Ispiši listić</button>
+    </div>
+    <div class="card pcard">
+      <h2>Spremi ili prenesi napredak</h2>
+      <p>Napredak je samo u ovom pregledniku. Spremi ga u datoteku za novi mobitel ili kao sigurnosnu kopiju.</p>
+      <button class="btn small" id="pExport">Spremi u datoteku</button>
+      <label class="btn small ghost">Učitaj iz datoteke<input type="file" id="pImport" accept=".json,application/json" hidden></label>
+    </div>
+    <button class="btn ghost" onclick="goHome()">Početna</button>
+  </section>
 </main>
+<div id="sheet"></div>
 
 <script type="module" src="js/main.js"></script>
 </body>

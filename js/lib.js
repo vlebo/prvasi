@@ -31,3 +31,14 @@ export function draw(name, list) {
 export const sign = (a, b) => a < b ? '<' : a > b ? '>' : '=';
 // prazna/aktivna/popunjena kućica za i-ti znak, kad je k znakova već upisano
 export const slot = (v, i, k) => `<span class="slot${i < k ? ' filled' : i === k ? ' active' : ''}">${i < k ? v : i === k ? '?' : '&nbsp;'}</span>`;
+
+// Potpis zadatka (što piše + odgovor), da se isti zadatak ne ponavlja
+export const sig = t => (t.show ? t.show(0) : t.view) + '|' + (t.steps || [t.answer]).join();
+// Zadatak koji nije među zadnjih `keep` viđenih; ako ih nakon 50 pokušaja nema (sve kombinacije potrošene), prihvati bilo koji
+export function fresh(make, seen, keep = 30) {
+  let t;
+  for (let i = 0; i < 50; i++) if (!seen.has(sig(t = make()))) break;
+  seen.delete(sig(t)); seen.add(sig(t)); // na kraj reda
+  if (seen.size > keep) seen.delete(seen.values().next().value);
+  return t;
+}

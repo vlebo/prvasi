@@ -156,3 +156,48 @@ input:focus { border-color: var(--c); }
   body.need-landscape :is(#level, #streak) { display: inline-flex; vertical-align: middle; min-height: 0; height: 26px; margin: 0 10px; }
   body.need-landscape .q { min-height: 0; margin: 0 auto 6px; }
 }
+
+/* Kutak za roditelje */
+.player.on { outline: 5px solid var(--c); }
+.pcard { max-width: 640px; margin: 24px auto; text-align: left; font-weight: 700; }
+.pcard h2 { margin: 0 0 8px; }
+.pcard p { color: var(--muted); margin: 0 0 12px; }
+select { font: inherit; font-size: 1.2rem; font-weight: 800; padding: 8px 12px; border-radius: 14px; border: 3px solid var(--line); background: #fff; margin: 4px 0; }
+.check { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
+.check input { width: 24px; height: 24px; }
+.prow { display: flex; align-items: center; gap: 12px; max-width: 640px; margin: 8px auto; background: #fff; border-radius: 16px; padding: 10px 14px;
+        font-weight: 800; text-align: left; box-shadow: 0 4px 0 var(--line); flex-wrap: wrap; }
+.prow .pname { flex: 1; min-width: 140px; }
+.pbar { width: 120px; height: 14px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.pbar i { display: block; height: 100%; background: var(--c); }
+.plv { color: var(--muted); font-size: .9rem; min-width: 80px; }
+#pReport .subject { max-width: 640px; margin-inline: auto; }
+#sheet { display: none; }
+@media print {
+  @page { size: A4; margin: 12mm; }
+  body { background: #fff; }
+  main { display: none !important; }
+  #sheet { display: block; text-align: left; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+.sheet-head { display: flex; gap: 24px; align-items: baseline; font-size: 1.1rem; border-bottom: 3px solid var(--c); padding-bottom: 6px; }
+.sheet-head b { flex: 1; font-size: 1.5rem; }
+.sheet-how { font-weight: 700; margin: 8px 0 12px; }
+.tasks { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+.task { display: flex; gap: 6px; border: 2px solid var(--line); border-radius: 14px; padding: 3mm; break-inside: avoid; }
+.tno { font-weight: 900; font-size: 1.1rem; color: var(--c); }
+.tbody { flex: 1; zoom: .38; text-align: center; }
+.tbody .q { min-height: 0; margin: 0 auto 16px; }
+.task.wide { grid-column: span 2; }
+.task.wide .tbody { zoom: .6; }
+.tbody .slot.active { animation: none; }
+.tbody .answers button { background: #fff; box-shadow: none; border: 4px solid var(--line); }
+.tbody .answers.line button { border: none; }
+.key { break-before: page; display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 1.2rem; font-weight: 700; }
+.key b { width: 100%; }
+.key.flip { break-before: auto; transform: rotate(180deg); margin-top: 8mm; border-top: 2px dashed var(--line); padding-top: 4mm; }
+.news { font-weight: 700; font-size: 1.15rem; border: 3px solid var(--gold); }
+.news b { color: var(--gold); font-size: 1.4rem; }
+.news ul { margin: 6px 0 0; padding-left: 22px; }
+.tbody .slot:not(.filled) { color: transparent; border: 6px solid #bbb; animation: none; }
+.tbody .eq.small { font-size: 5.5rem; } /* kućice dovoljno velike za dječji rukopis */
+.wbox { width: 160px; height: 140px; margin: 0 auto; border: 6px solid #bbb; border-radius: 24px; }

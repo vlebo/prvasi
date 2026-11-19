@@ -9,7 +9,7 @@ export default { title: 'Zadnje slovo', learns: 'glasove i zadnje slovo u riječ
     const list = BY_LAST[last], [pic, word] = list[rnd(list.length)];
     const opts = new Set([last]);
     while (opts.size < 3) opts.add(ALL_LETTERS[rnd(ALL_LETTERS.length)]);
-    return { view: `<div><div class="pic">${pic}</div><div class="word"></div></div>`,
+    return { kind: 'slovo ' + last, view: `<div><div class="pic">${pic}</div><div class="word"></div></div>`,
              reveal: `<div><div class="pic">${pic}</div><div class="word">${word.slice(0, -1)}<b>${last}</b></div></div>`,
              answer: last, options: shuffle([...opts]) };
   } };

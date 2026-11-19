@@ -11,5 +11,5 @@ export default { title: 'Računko', learns: 'zbrajanje i oduzimanje do 10', colo
     const a = rnd(MAX + 1);
     const b = plus ? rnd(MAX + 1 - a) : rnd(a + 1);
     const answer = plus ? a + b : a - b, op = plus ? '+' : '−';
-    return { view: eq(a, op, b, '?'), reveal: eq(a, op, b, answer), answer, options: numberOptions(answer) };
+    return { kind: plus ? 'zbrajanje' : 'oduzimanje', view: eq(a, op, b, '?'), reveal: eq(a, op, b, answer), answer, options: numberOptions(answer) };
   } };

@@ -11,6 +11,7 @@ import zadnje from './zadnje.js';
 import gdje from './gdje.js';
 import strane from './strane.js';
 import crta from './crta.js';
+import { fresh, sig } from '../lib.js';
 
 export const GAMES = { racunko, brojalica, slovo, usporedi, poredaj, niz, slogovi, uljez, boje, zadnje, gdje, strane, crta };
 
@@ -23,4 +24,10 @@ console.assert(Object.values(SUBJECTS).flat().sort().join() === Object.keys(GAME
 for (const g of Object.values(GAMES)) for (let lv = 1; lv <= (g.maxLevel || 1); lv++) for (let i = 0; i < 300; i++) {
   const t = g.make(lv), steps = t.steps || [t.answer];
   console.assert(t.options.length >= 3 && new Set(t.options).size === t.options.length && steps.every(x => t.options.includes(x)), g.title, lv, t);
+}
+
+// self-check: 10 zadataka zaredom bez ponavljanja (kad igra ima dovoljno kombinacija)
+for (const [id, g] of Object.entries(GAMES)) {
+  const seen = new Set(), list = Array.from({ length: 10 }, () => sig(fresh(() => g.make(1), seen)));
+  console.assert(new Set(list).size === 10, id, 'ponavlja zadatke');
 }

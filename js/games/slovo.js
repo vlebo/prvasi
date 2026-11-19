@@ -7,7 +7,7 @@ export default { title: 'Prvo slovo', learns: 'glasove i prvo slovo u riječi', 
     const [pic, word] = draw('slovo', WORDS);
     const opts = new Set([word[0]]);
     while (opts.size < 3) opts.add(LETTERS[rnd(LETTERS.length)]);
-    return { view: `<div><div class="pic">${pic}</div><div class="word"></div></div>`,
+    return { kind: 'slovo ' + word[0], view: `<div><div class="pic">${pic}</div><div class="word"></div></div>`,
              reveal: `<div><div class="pic">${pic}</div><div class="word"><b>${word[0]}</b>${word.slice(1)}</div></div>`,
              answer: word[0], options: shuffle([...opts]) };
   } };

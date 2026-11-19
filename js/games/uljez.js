@@ -20,6 +20,6 @@ export default { title: 'Uljez', learns: 'razvrstavanje: voće, povrće, životi
     const three = shuffle([...GROUPS[g].items]).slice(0, 3);
     const hint = '<svg viewBox="0 0 260 70" style="width:min(80%,360px)">' + [0, 1, 2].map(i => `<circle cx="${35 + i * 64}" cy="35" r="26" style="fill:var(--c)"/>`).join('') +
       '<rect x="200" y="9" width="52" height="52" rx="10" fill="none" stroke="#2f2a3a" stroke-width="6" stroke-dasharray="10 6"/></svg>';
-    return { view: hint, reveal: `<div class="word" style="letter-spacing:0">${odd} nije ${GROUPS[g].name}</div>`,
+    return { kind: GROUPS[g].name, view: hint, reveal: `<div class="word" style="letter-spacing:0">${odd} nije ${GROUPS[g].name}</div>`,
              answer: odd, options: shuffle([...three, odd]) };
   } };
